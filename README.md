@@ -18,3 +18,5 @@ Sync app for Storj.
 1. Open a Command Prompt / Terminal
 1. Navigate to the extracted `goobox-sync-storj` folder
 1. Run the batch file, i.e. `goobox-sync-storj.bat`
+
+The app uses the auth file in the `<user.home>/.storj` folder created by the libstorj CLI for the authentication with the Storj bridge.
