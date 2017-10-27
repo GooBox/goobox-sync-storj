@@ -17,7 +17,9 @@
 package io.goobox.sync.storj;
 
 import java.io.File;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
@@ -26,35 +28,54 @@ import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.Storj;
 
 public class App {
+
+    private static BlockingQueue<Runnable> queue;
+
     public static void main(String[] args) {
         init();
-        checkAndCreateLocalFolder();
-        checkAndCreateCloudBucket();
+
+        if (!checkAndCreateLocalSyncDir()) {
+            System.exit(1);
+        }
+
+        Bucket gooboxBucket = checkAndCreateCloudBucket();
+        if (gooboxBucket == null) {
+            System.exit(1);
+        }
+
+        queue = new LinkedBlockingQueue<>();
+        queue.add(new CheckCloudTask(gooboxBucket, queue));
+        new TaskExecutor(queue).start();
     }
 
     private static void init() {
-        Storj.appDir = new java.io.File(Utils.getHomeFolder(), ".storj").getAbsolutePath();
+        Storj.setConfigDirectory(Utils.getConfigDir());
+        Storj.setDownloadDirectory(Utils.getSyncDir());
     }
 
-    private static void checkAndCreateLocalFolder() {
+    private static boolean checkAndCreateLocalSyncDir() {
         System.out.print("Checking if local Goobox folder exists... ");
-        File gooboxFolder = new File(Utils.getHomeFolder(), "Goobox");
-        if (gooboxFolder.exists()) {
+        File gooboxDir = Utils.getSyncDir();
+        if (gooboxDir.exists()) {
             System.out.println("yes");
+            return true;
         } else {
             System.out.print("no. ");
-            boolean created = gooboxFolder.mkdir();
+            boolean created = gooboxDir.mkdir();
             if (created) {
                 System.out.println("Local Goobox folder created.");
+                return true;
             } else {
                 System.out.println("Failed creating local Goobox folder.");
+                return false;
             }
         }
     }
 
-    private static void checkAndCreateCloudBucket() {
+    private static Bucket checkAndCreateCloudBucket() {
         System.out.print("Checking if cloud Goobox bucket exists... ");
         final CountDownLatch latch = new CountDownLatch(1);
+        final Bucket[] result = { null };
         final Storj storj = Storj.getInstance();
         try {
             storj.getBuckets(new GetBucketsCallback() {
@@ -66,38 +87,36 @@ public class App {
 
                 @Override
                 public void onBucketsReceived(Bucket[] buckets) {
-                    boolean exists = false;
                     for (Bucket bucket : buckets) {
                         if ("Goobox".equals(bucket.getName())) {
-                            exists = true;
-                            break;
+                            result[0] = bucket;
+                            System.out.println("yes");
+                            latch.countDown();
+                            return;
                         }
                     }
 
-                    if (exists) {
-                        System.out.println("yes");
-                        latch.countDown();
-                    } else {
-                        System.out.print("no. ");
-                        storj.createBucket("Goobox", new CreateBucketCallback() {
-                            @Override
-                            public void onError(String message) {
-                                System.out.println("Failed creating cloud Goobox bucket.");
-                                latch.countDown();
-                            }
+                    System.out.print("no. ");
+                    storj.createBucket("Goobox", new CreateBucketCallback() {
+                        @Override
+                        public void onError(String message) {
+                            System.out.println("Failed creating cloud Goobox bucket.");
+                            latch.countDown();
+                        }
 
-                            @Override
-                            public void onBucketCreated(Bucket bucket) {
-                                System.out.println("Cloud Goobox bucket created.");
-                                latch.countDown();
-                            }
-                        });
-                    }
+                        @Override
+                        public void onBucketCreated(Bucket bucket) {
+                            System.out.println("Cloud Goobox bucket created.");
+                            result[0] = bucket;
+                            latch.countDown();
+                        }
+                    });
                 }
             });
         } catch (KeysNotFoundException e) {
             System.out.println(
                     "No keys found. Have your imported your keys using libstorj? Make sure you don't specify a passcode.");
         }
+        return result[0];
     }
 }

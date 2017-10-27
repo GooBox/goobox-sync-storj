@@ -17,30 +17,28 @@
 package io.goobox.sync.storj;
 
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
 
-public class Utils {
+public class DeleteLocalFileTask implements Runnable {
 
-    public static File getHomeDir() {
-        return new File(System.getProperty("user.home"));
+    private File file;
+
+    public DeleteLocalFileTask(File file) {
+        this.file = file;
     }
 
-    public static File getConfigDir() {
-        return new File(Utils.getHomeDir(), ".storj");
-    }
-
-    public static File getSyncDir() {
-        return new File(Utils.getHomeDir(), "Goobox");
-    }
-
-    public static long getTime(String storjTimestamp) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        Date date = sdf.parse(storjTimestamp);
-        return date.getTime();
+    @Override
+    public void run() {
+        System.out.print("Deleting local file " + file.getName() + "... ");
+        try {
+            boolean success = file.delete();
+            if (success) {
+                System.out.println("done");
+            } else {
+                System.out.println("failed");
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 }
