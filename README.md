@@ -4,7 +4,7 @@ Sync app for Storj.
 
 ## Prerequisites
 
-1. Install [Java](https://java.com/download/) 7 or later
+1. Install [Java](https://java.com/download/) 7 or later. Make sure to install the 64-bit variant.
 1. Install [libstorj](https://github.com/Storj/libstorj)
 1. Import your keys using the libstorj CLI. Don't use a passcode. This is not supported yet by the sync app.
 
