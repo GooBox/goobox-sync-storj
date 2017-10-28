@@ -20,3 +20,9 @@ Sync app for Storj.
 1. Run the batch file, i.e. `goobox-sync-storj.bat`
 
 The app uses the auth file in the `<user.home>/.storj` folder created by the libstorj CLI for the authentication with the Storj bridge.
+
+Currently the app supports one-way sync from the Storj cloud to the local file system. The app will sync the content of the bucket with name `Goobox` to the local folder with name `Goobox`, which is a subfolder of the user home folder. If either the bucket or the local folder do not exist, the app will automatically create empty ones.
+
+The app will poll the Storj cloud once per minute for any changes in the content.
+
+Sync from the local folder back to the Storj cloud is not supported yet.
