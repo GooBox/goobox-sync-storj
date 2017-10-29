@@ -50,6 +50,8 @@ public class DownloadFileTask implements Runnable {
             @Override
             public void onError(File file, String message) {
                 System.out.println("  " + message);
+                // Clear partially downloaded file
+                new java.io.File(Utils.getSyncDir(), file.getName()).delete();
             }
         });
     }
