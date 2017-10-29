@@ -20,17 +20,17 @@ import java.util.concurrent.BlockingQueue;
 
 public class TaskExecutor extends Thread {
 
-    private BlockingQueue<Runnable> queue;
+    private BlockingQueue<Runnable> tasks;
 
-    public TaskExecutor(BlockingQueue<Runnable> queue) {
-        this.queue = queue;
+    public TaskExecutor(BlockingQueue<Runnable> tasks) {
+        this.tasks = tasks;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                Runnable task = queue.take();
+                Runnable task = tasks.take();
                 task.run();
             } catch (InterruptedException e) {
                 // nothing to do

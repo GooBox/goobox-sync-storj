@@ -16,10 +16,12 @@
  */
 package io.goobox.sync.storj;
 
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
 import io.storj.libstorj.Bucket;
@@ -30,11 +32,13 @@ import io.storj.libstorj.Storj;
 public class CheckCloudTask implements Runnable {
 
     private Bucket gooboxBucket;
-    private BlockingQueue<Runnable> queue;
+    private BlockingQueue<Runnable> tasks;
+    private Set<Path> syncingFiles;
 
-    public CheckCloudTask(Bucket gooboxBucket, BlockingQueue<Runnable> queue) {
+    public CheckCloudTask(Bucket gooboxBucket, BlockingQueue<Runnable> queue, Set<Path> syncingFiles) {
         this.gooboxBucket = gooboxBucket;
-        this.queue = queue;
+        this.tasks = queue;
+        this.syncingFiles = syncingFiles;
     }
 
     @Override
@@ -43,11 +47,11 @@ public class CheckCloudTask implements Runnable {
         Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
-                List<java.io.File> localFiles = new ArrayList<>(Arrays.asList(Utils.getSyncDir().listFiles()));
+                List<java.io.File> localFiles = new ArrayList<>(Arrays.asList(Utils.getSyncDir().toFile().listFiles()));
                 for (File file : files) {
                     java.io.File localFile = getLocalFile(file.getName(), localFiles);
                     if (localFile == null) {
-                        queue.add(new DownloadFileTask(gooboxBucket, file));
+                        tasks.add(new DownloadFileTask(gooboxBucket, file, syncingFiles));
                     } else {
                         // Remove from the list of local file to avoid delete it
                         localFiles.remove(localFile);
@@ -55,7 +59,7 @@ public class CheckCloudTask implements Runnable {
                             long cloudTime = Utils.getTime(file.getCreated());
                             long localTime = localFile.lastModified();
                             if (cloudTime > localTime) {
-                                queue.add(new DownloadFileTask(gooboxBucket, file));
+                                tasks.add(new DownloadFileTask(gooboxBucket, file, syncingFiles));
                             }
                         } catch (ParseException e) {
                             e.printStackTrace();
@@ -65,10 +69,10 @@ public class CheckCloudTask implements Runnable {
 
                 // Delete all local files without cloud counterpart
                 for (java.io.File file : localFiles) {
-                    queue.add(new DeleteLocalFileTask(file));
+                    tasks.add(new DeleteLocalFileTask(file, syncingFiles));
                 }
 
-                if (queue.isEmpty()) {
+                if (tasks.isEmpty()) {
                     // Sleep 1 minute to avoid overloading the bridge
                     System.out.println("Sleeping for 1 minute...");
                     try {
@@ -78,7 +82,7 @@ public class CheckCloudTask implements Runnable {
                     }
                 }
                 // Add itself to the queue
-                queue.add(CheckCloudTask.this);
+                tasks.add(CheckCloudTask.this);
             }
 
             @Override

@@ -17,26 +17,37 @@
 package io.goobox.sync.storj;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Set;
 
 public class DeleteLocalFileTask implements Runnable {
 
     private File file;
+    private Set<Path> syncingFiles;
 
-    public DeleteLocalFileTask(File file) {
+    public DeleteLocalFileTask(File file, Set<Path> syncingFiles) {
         this.file = file;
+        this.syncingFiles = syncingFiles;
     }
 
     @Override
     public void run() {
         System.out.print("Deleting local file " + file.getName() + "... ");
+
+        Path path = Paths.get(file.getName());
+        syncingFiles.add(path);
+
         try {
             boolean success = file.delete();
             if (success) {
                 System.out.println("done");
             } else {
+                syncingFiles.remove(path);
                 System.out.println("failed");
             }
         } catch (Exception e) {
+            syncingFiles.remove(path);
             System.out.println(e.getMessage());
         }
     }

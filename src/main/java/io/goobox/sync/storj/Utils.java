@@ -16,7 +16,8 @@
  */
 package io.goobox.sync.storj;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,16 +25,16 @@ import java.util.TimeZone;
 
 public class Utils {
 
-    public static File getHomeDir() {
-        return new File(System.getProperty("user.home"));
+    public static Path getHomeDir() {
+        return Paths.get(System.getProperty("user.home"));
     }
 
-    public static File getConfigDir() {
-        return new File(Utils.getHomeDir(), ".storj");
+    public static Path getConfigDir() {
+        return Utils.getHomeDir().resolve(".storj");
     }
 
-    public static File getSyncDir() {
-        return new File(Utils.getHomeDir(), "Goobox");
+    public static Path getSyncDir() {
+        return Utils.getHomeDir().resolve("Goobox");
     }
 
     public static long getTime(String storjTimestamp) throws ParseException {

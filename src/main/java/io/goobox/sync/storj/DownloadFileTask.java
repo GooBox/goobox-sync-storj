@@ -16,6 +16,10 @@
  */
 package io.goobox.sync.storj;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Set;
+
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DownloadFileCallback;
 import io.storj.libstorj.File;
@@ -25,15 +29,21 @@ public class DownloadFileTask implements Runnable {
 
     private Bucket bucket;
     private File file;
+    private Set<Path> syncingFiles;
 
-    public DownloadFileTask(Bucket bucket, File file) {
+    public DownloadFileTask(Bucket bucket, File file, Set<Path> syncingFiles) {
         this.bucket = bucket;
         this.file = file;
+        this.syncingFiles = syncingFiles;
     }
 
     @Override
     public void run() {
         System.out.println("Downloading file " + file.getName() + "... ");
+
+        final Path path = Paths.get(file.getName());
+        syncingFiles.add(path);
+
         Storj.getInstance().downloadFile(bucket, file, new DownloadFileCallback() {
             @Override
             public void onProgress(File file, double progress, long downloadedBytes, long totalBytes) {
@@ -44,6 +54,7 @@ public class DownloadFileTask implements Runnable {
 
             @Override
             public void onComplete(File file, String localPath) {
+                syncingFiles.remove(path);
                 System.out.println("  done.");
             }
 
@@ -51,7 +62,7 @@ public class DownloadFileTask implements Runnable {
             public void onError(File file, String message) {
                 System.out.println("  " + message);
                 // Clear partially downloaded file
-                new java.io.File(Utils.getSyncDir(), file.getName()).delete();
+                Utils.getSyncDir().resolve(file.getName()).toFile().delete();
             }
         });
     }

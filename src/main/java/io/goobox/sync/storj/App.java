@@ -17,6 +17,10 @@
 package io.goobox.sync.storj;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,10 +33,13 @@ import io.storj.libstorj.Storj;
 
 public class App {
 
-    private static BlockingQueue<Runnable> queue;
-
     public static void main(String[] args) {
-        init();
+        new App().init();
+    }
+
+    private void init() {
+        Storj.setConfigDirectory(Utils.getConfigDir().toFile());
+        Storj.setDownloadDirectory(Utils.getSyncDir().toFile());
 
         if (!checkAndCreateLocalSyncDir()) {
             System.exit(1);
@@ -43,21 +50,18 @@ public class App {
             System.exit(1);
         }
 
-        new FileWatcher().start();
+        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
+        Set<Path> syncingFiles = Collections.synchronizedSet(new HashSet<Path>());
 
-        queue = new LinkedBlockingQueue<>();
-        queue.add(new CheckCloudTask(gooboxBucket, queue));
-        new TaskExecutor(queue).start();
+        tasks.add(new CheckCloudTask(gooboxBucket, tasks, syncingFiles));
+
+        new FileWatcher(syncingFiles).start();
+        new TaskExecutor(tasks).start();
     }
 
-    private static void init() {
-        Storj.setConfigDirectory(Utils.getConfigDir());
-        Storj.setDownloadDirectory(Utils.getSyncDir());
-    }
-
-    private static boolean checkAndCreateLocalSyncDir() {
+    private boolean checkAndCreateLocalSyncDir() {
         System.out.print("Checking if local Goobox folder exists... ");
-        File gooboxDir = Utils.getSyncDir();
+        File gooboxDir = Utils.getSyncDir().toFile();
         if (gooboxDir.exists()) {
             System.out.println("yes");
             return true;
@@ -74,7 +78,7 @@ public class App {
         }
     }
 
-    private static Bucket checkAndCreateCloudBucket() {
+    private Bucket checkAndCreateCloudBucket() {
         System.out.print("Checking if cloud Goobox bucket exists... ");
         final CountDownLatch latch = new CountDownLatch(1);
         final Bucket[] result = { null };

@@ -22,22 +22,47 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Set;
 
 public class FileWatcher extends Thread {
+
+    private Set<Path> syncingFiles;
+
+    public FileWatcher(Set<Path> syncingFiles) {
+        this.syncingFiles = syncingFiles;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> WatchEvent<T> cast(WatchEvent<?> event) {
+        return (WatchEvent<T>) event;
+    }
 
     @Override
     public void run() {
         try {
             WatchService watcher = FileSystems.getDefault().newWatchService();
-            Utils.getSyncDir().toPath().register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            Utils.getSyncDir().register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 
             WatchKey key;
             while ((key = watcher.take()) != null) {
-                for (WatchEvent<?> event : key.pollEvents()) {
-                    System.out.println("Event kind:" + event.kind() + ". File affected: " + event.context() + ".");
+                for (WatchEvent<?> ev : key.pollEvents()) {
+                    WatchEvent<Path> event = cast(ev);
+                    Path path = event.context();
+
+                    if (syncingFiles.contains(path)) {
+                        // the event is produced by the cloud sync - ignore it
+                        if (event.kind() == ENTRY_DELETE) {
+                            // remove the file from the ignore set
+                            syncingFiles.remove(path);
+                        }
+                    } else if (!isHidden(path)) {
+                        System.out.println("Event kind:" + event.kind() + ". Count: " + event.count()
+                                + ". File affected: " + event.context() + ".");
+                    }
                 }
                 key.reset();
             }
@@ -47,6 +72,10 @@ public class FileWatcher extends Thread {
         } catch (InterruptedException e) {
             // do nothing
         }
+    }
+
+    private boolean isHidden(Path path) {
+        return Utils.getConfigDir().resolve(path.toString()).toFile().isHidden();
     }
 
 }
