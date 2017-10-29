@@ -43,6 +43,8 @@ public class App {
             System.exit(1);
         }
 
+        new FileWatcher().start();
+
         queue = new LinkedBlockingQueue<>();
         queue.add(new CheckCloudTask(gooboxBucket, queue));
         new TaskExecutor(queue).start();
