@@ -63,4 +63,12 @@
       <version>0.1</version>
     </dependency>
   </dependencies>
+  
+  <repositories>
+    <repository>
+      <id>central</id>
+      <name>bintray</name>
+      <url>http://jcenter.bintray.com</url>
+    </repository>
+  </repositories>
 </project>
