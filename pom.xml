@@ -66,8 +66,7 @@
   
   <repositories>
     <repository>
-      <id>central</id>
-      <name>bintray</name>
+      <id>bintray</id>
       <url>http://jcenter.bintray.com</url>
       <releases>
         <enabled>true</enabled>
