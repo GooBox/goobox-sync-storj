@@ -26,15 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.Set;
 
 public class FileWatcher extends Thread {
-
-    private Set<Path> syncingFiles;
-
-    public FileWatcher(Set<Path> syncingFiles) {
-        this.syncingFiles = syncingFiles;
-    }
 
     @SuppressWarnings("unchecked")
     static <T> WatchEvent<T> cast(WatchEvent<?> event) {
@@ -53,15 +46,9 @@ public class FileWatcher extends Thread {
                     WatchEvent<Path> event = cast(ev);
                     Path path = event.context();
 
-                    if (syncingFiles.contains(path)) {
-                        // the event is produced by the cloud sync - ignore it
-                        if (event.kind() == ENTRY_DELETE) {
-                            // remove the file from the ignore set
-                            syncingFiles.remove(path);
-                        }
-                    } else if (!isHidden(path)) {
-                        System.out.println("Event kind:" + event.kind() + ". Count: " + event.count()
-                                + ". File affected: " + event.context() + ".");
+                    if (!isHidden(path)) {
+//                        System.out.println("Event kind:" + event.kind() + ". Count: " + event.count()
+//                                + ". File affected: " + event.context() + ".");
                     }
                 }
                 key.reset();
@@ -75,7 +62,7 @@ public class FileWatcher extends Thread {
     }
 
     private boolean isHidden(Path path) {
-        return Utils.getConfigDir().resolve(path.toString()).toFile().isHidden();
+        return Utils.getStorjConfigDir().resolve(path.toString()).toFile().isHidden();
     }
 
 }

@@ -30,11 +30,15 @@ public class Utils {
     }
 
     public static Path getConfigDir() {
-        return Utils.getHomeDir().resolve(".storj");
+        return Utils.getHomeDir().resolve(".goobox");
     }
 
     public static Path getSyncDir() {
         return Utils.getHomeDir().resolve("Goobox");
+    }
+
+    public static Path getStorjConfigDir() {
+        return Utils.getHomeDir().resolve(".storj");
     }
 
     public static long getTime(String storjTimestamp) throws ParseException {
