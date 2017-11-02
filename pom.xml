@@ -60,7 +60,7 @@
     <dependency>
       <groupId>io.storj</groupId>
       <artifactId>libstorj-java</artifactId>
-      <version>0.2-SNAPSHOT</version>
+      <version>0.2</version>
     </dependency><dependency>
       <groupId>org.dizitart</groupId>
       <artifactId>nitrite</artifactId>
