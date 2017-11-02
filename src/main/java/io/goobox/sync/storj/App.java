@@ -77,7 +77,7 @@ public class App {
             System.out.print("no. ");
             boolean created = dir.mkdir();
             if (created) {
-                System.out.println("Created created.");
+                System.out.println("Folder created.");
                 return true;
             } else {
                 System.out.println("Failed creating folder.");
