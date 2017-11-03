@@ -42,7 +42,7 @@ public class CheckStateTask implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Checking Storj Bridge for changes...");
+        System.out.println("Checking for changes...");
         Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
