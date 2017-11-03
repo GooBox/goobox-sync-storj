@@ -17,6 +17,7 @@
 package io.goobox.sync.storj;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,12 +30,19 @@ import io.storj.libstorj.Storj;
 
 public class App {
 
-    private static BlockingQueue<Runnable> queue;
-
     public static void main(String[] args) {
-        init();
+        new App().init();
+    }
 
-        if (!checkAndCreateLocalSyncDir()) {
+    private void init() {
+        Storj.setConfigDirectory(Utils.getStorjConfigDir().toFile());
+        Storj.setDownloadDirectory(Utils.getSyncDir().toFile());
+
+        if (!checkAndCreateSyncDir()) {
+            System.exit(1);
+        }
+
+        if (!checkAndCreateConfigDir()) {
             System.exit(1);
         }
 
@@ -43,36 +51,42 @@ public class App {
             System.exit(1);
         }
 
-        queue = new LinkedBlockingQueue<>();
-        queue.add(new CheckCloudTask(gooboxBucket, queue));
-        new TaskExecutor(queue).start();
+        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
+        tasks.add(new CheckStateTask(gooboxBucket, tasks));
+
+        new FileWatcher().start();
+        new TaskExecutor(tasks).start();
     }
 
-    private static void init() {
-        Storj.setConfigDirectory(Utils.getConfigDir());
-        Storj.setDownloadDirectory(Utils.getSyncDir());
-    }
-
-    private static boolean checkAndCreateLocalSyncDir() {
+    private boolean checkAndCreateSyncDir() {
         System.out.print("Checking if local Goobox folder exists... ");
-        File gooboxDir = Utils.getSyncDir();
-        if (gooboxDir.exists()) {
+        return checkAndCreateFolder(Utils.getSyncDir());
+    }
+
+    private boolean checkAndCreateConfigDir() {
+        System.out.print("Checking if Goobox config folder exists... ");
+        return checkAndCreateFolder(Utils.getConfigDir());
+    }
+
+    private boolean checkAndCreateFolder(Path path) {
+        File dir = path.toFile();
+        if (dir.exists()) {
             System.out.println("yes");
             return true;
         } else {
             System.out.print("no. ");
-            boolean created = gooboxDir.mkdir();
+            boolean created = dir.mkdir();
             if (created) {
-                System.out.println("Local Goobox folder created.");
+                System.out.println("Folder created.");
                 return true;
             } else {
-                System.out.println("Failed creating local Goobox folder.");
+                System.out.println("Failed creating folder.");
                 return false;
             }
         }
     }
 
-    private static Bucket checkAndCreateCloudBucket() {
+    private Bucket checkAndCreateCloudBucket() {
         System.out.print("Checking if cloud Goobox bucket exists... ");
         final CountDownLatch latch = new CountDownLatch(1);
         final Bucket[] result = { null };

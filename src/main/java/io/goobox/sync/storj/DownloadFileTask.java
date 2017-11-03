@@ -16,6 +16,7 @@
  */
 package io.goobox.sync.storj;
 
+import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DownloadFileCallback;
 import io.storj.libstorj.File;
@@ -34,6 +35,7 @@ public class DownloadFileTask implements Runnable {
     @Override
     public void run() {
         System.out.println("Downloading file " + file.getName() + "... ");
+
         Storj.getInstance().downloadFile(bucket, file, new DownloadFileCallback() {
             @Override
             public void onProgress(File file, double progress, long downloadedBytes, long totalBytes) {
@@ -44,11 +46,15 @@ public class DownloadFileTask implements Runnable {
 
             @Override
             public void onComplete(File file, String localPath) {
+                DB.setSynced(file, new java.io.File(localPath));
+                DB.commit();
                 System.out.println("  done.");
             }
 
             @Override
             public void onError(File file, String message) {
+                DB.setDownloadFailed(file);
+                DB.commit();
                 System.out.println("  " + message);
             }
         });

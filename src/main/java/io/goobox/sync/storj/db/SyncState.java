@@ -14,28 +14,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.goobox.sync.storj;
+package io.goobox.sync.storj.db;
 
-import java.util.concurrent.BlockingQueue;
+public enum SyncState {
 
-public class TaskExecutor extends Thread {
+    SYNCED,
+    FOR_DOWNLOAD,
+    FOR_UPLOAD,
+    FOR_LOCAL_DELETE,
+    FOR_CLOUD_DELETE,
+    DOWNLOAD_FAILED,
+    UPLOAD_FAILED,
+    CONFLICT;
 
-    private BlockingQueue<Runnable> tasks;
-
-    public TaskExecutor(BlockingQueue<Runnable> tasks) {
-        this.tasks = tasks;
+    public boolean isSynced() {
+        return this == SYNCED;
     }
 
-    @Override
-    public void run() {
-        while (true) {
-            try {
-                Runnable task = tasks.take();
-                task.run();
-            } catch (InterruptedException e) {
-                // nothing to do
-            }
-        }
+    public boolean isPending() {
+        return this == FOR_DOWNLOAD
+                || this == FOR_UPLOAD
+                || this == FOR_LOCAL_DELETE
+                || this == FOR_CLOUD_DELETE;
+    }
+
+    public boolean isFailed() {
+        return this == DOWNLOAD_FAILED
+                || this == UPLOAD_FAILED;
+    }
+
+    public boolean isConflict() {
+        return this == CONFLICT;
     }
 
 }

@@ -16,34 +16,39 @@
  */
 package io.goobox.sync.storj;
 
-import java.io.File;
-
 import io.goobox.sync.storj.db.DB;
+import io.storj.libstorj.Bucket;
+import io.storj.libstorj.DeleteFileCallback;
+import io.storj.libstorj.File;
+import io.storj.libstorj.Storj;
 
-public class DeleteLocalFileTask implements Runnable {
+public class DeleteCloudFileTask implements Runnable {
 
+    private Bucket bucket;
     private File file;
 
-    public DeleteLocalFileTask(File file) {
+    public DeleteCloudFileTask(Bucket bucket, File file) {
+        this.bucket = bucket;
         this.file = file;
     }
 
     @Override
     public void run() {
-        System.out.print("Deleting local file " + file.getName() + "... ");
+        System.out.println("Deleting cloud file " + file.getName() + "... ");
 
-        try {
-            boolean success = file.delete();
-            if (success) {
+        Storj.getInstance().deleteFile(bucket, file, new DeleteFileCallback() {
+            @Override
+            public void onFileDeleted() {
                 System.out.println("done");
                 DB.remove(file);
                 DB.commit();
-            } else {
-                System.out.println("failed");
             }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+
+            @Override
+            public void onError(String message) {
+                System.out.println("failed. " + message);
+            }
+        });
     }
 
 }
