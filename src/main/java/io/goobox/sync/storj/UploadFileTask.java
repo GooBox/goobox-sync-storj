@@ -16,8 +16,11 @@
  */
 package io.goobox.sync.storj;
 
+import java.util.concurrent.CountDownLatch;
+
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
+import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.File;
 import io.storj.libstorj.ListFilesCallback;
 import io.storj.libstorj.Storj;
@@ -35,6 +38,8 @@ public class UploadFileTask implements Runnable {
 
     @Override
     public void run() {
+        deleteIfExisting();
+
         System.out.println("Uploading file " + file.getName() + "... ");
 
         Storj.getInstance().uploadFile(bucket, file.getAbsolutePath(), new UploadFileCallback() {
@@ -78,6 +83,51 @@ public class UploadFileTask implements Runnable {
                 DB.setUploadFailed(file);
                 DB.commit();
                 System.out.println("  " + message);
+            }
+        });
+    }
+
+    private void deleteIfExisting() {
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
+            @Override
+            public void onFilesReceived(File[] files) {
+                String fileName = file.getName();
+                File storjFile = null;
+                for (File f : files) {
+                    if (fileName.equals(f.getName())) {
+                        storjFile = f;
+                    }
+                }
+
+                if (storjFile == null) {
+                    // no file to delete
+                    latch.countDown();
+                } else {
+                    System.out.print("Deleting old version of " + file.getName() + " on the cloud... ");
+
+                    Storj.getInstance().deleteFile(bucket, storjFile, new DeleteFileCallback() {
+                        @Override
+                        public void onFileDeleted() {
+                            System.out.println("done");
+                            latch.countDown();
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            System.out.println(message);
+                            latch.countDown();
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                String msg = String.format("Error checkging if file with name %s exists: %s", file.getName(), message);
+                System.out.println(msg);
+                latch.countDown();
             }
         });
     }
