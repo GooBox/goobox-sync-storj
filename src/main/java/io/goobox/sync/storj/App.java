@@ -88,49 +88,63 @@ public class App {
 
     private Bucket checkAndCreateCloudBucket() {
         System.out.print("Checking if cloud Goobox bucket exists... ");
-        final CountDownLatch latch = new CountDownLatch(1);
         final Bucket[] result = { null };
         final Storj storj = Storj.getInstance();
-        try {
-            storj.getBuckets(new GetBucketsCallback() {
-                @Override
-                public void onError(String message) {
-                    System.out.println(message);
-                    latch.countDown();
-                }
 
-                @Override
-                public void onBucketsReceived(Bucket[] buckets) {
-                    for (Bucket bucket : buckets) {
-                        if ("Goobox".equals(bucket.getName())) {
-                            result[0] = bucket;
-                            System.out.println("yes");
-                            latch.countDown();
-                            return;
+        try {
+            while (result[0] == null) {
+                final CountDownLatch latch = new CountDownLatch(1);
+
+                storj.getBuckets(new GetBucketsCallback() {
+                    @Override
+                    public void onBucketsReceived(Bucket[] buckets) {
+                        for (Bucket bucket : buckets) {
+                            if ("Goobox".equals(bucket.getName())) {
+                                result[0] = bucket;
+                                System.out.println("yes");
+                                latch.countDown();
+                                return;
+                            }
                         }
+
+                        System.out.print("no. ");
+                        storj.createBucket("Goobox", new CreateBucketCallback() {
+                            @Override
+                            public void onError(String message) {
+                                System.out.println("Failed creating cloud Goobox bucket.");
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onBucketCreated(Bucket bucket) {
+                                System.out.println("Cloud Goobox bucket created.");
+                                result[0] = bucket;
+                                latch.countDown();
+                            }
+                        });
                     }
 
-                    System.out.print("no. ");
-                    storj.createBucket("Goobox", new CreateBucketCallback() {
-                        @Override
-                        public void onError(String message) {
-                            System.out.println("Failed creating cloud Goobox bucket.");
-                            latch.countDown();
-                        }
+                    @Override
+                    public void onError(String message) {
+                        System.out.println(message);
+                        latch.countDown();
+                    }
+                });
 
-                        @Override
-                        public void onBucketCreated(Bucket bucket) {
-                            System.out.println("Cloud Goobox bucket created.");
-                            result[0] = bucket;
-                            latch.countDown();
-                        }
-                    });
+                latch.await();
+
+                if (result[0] == null) {
+                    // error - wait 3 seconds before trying again
+                    Thread.sleep(3000);
                 }
-            });
+            }
         } catch (KeysNotFoundException e) {
             System.out.println(
                     "No keys found. Have your imported your keys using libstorj? Make sure you don't specify a passcode.");
+        } catch (InterruptedException e) {
+            // do nothing
         }
+
         return result[0];
     }
 }
