@@ -38,7 +38,12 @@ public class UploadFileTask implements Runnable {
 
     @Override
     public void run() {
-        deleteIfExisting();
+        try {
+            deleteIfExisting();
+        } catch (InterruptedException e) {
+            // interrupted - stop execution
+            return;
+        }
 
         System.out.println("Uploading file " + file.getName() + "... ");
 
@@ -87,7 +92,7 @@ public class UploadFileTask implements Runnable {
         });
     }
 
-    private void deleteIfExisting() {
+    private void deleteIfExisting() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
 
         Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
@@ -130,6 +135,8 @@ public class UploadFileTask implements Runnable {
                 latch.countDown();
             }
         });
+
+        latch.await();
     }
 
 }
