@@ -16,6 +16,7 @@
  */
 package io.goobox.sync.storj.db;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -66,16 +67,32 @@ public class DB {
         return contains(file.getName());
     }
 
-    public synchronized static boolean contains(java.io.File file) {
-        return contains(file.getName());
+    public synchronized static boolean contains(Path path) {
+        return contains(path.getFileName().toString());
     }
 
     public synchronized static boolean contains(String fileName) {
         return get(fileName) != null;
     }
 
+    public synchronized static SyncFile get(File file) {
+        return get(file.getName());
+    }
+
+    public synchronized static SyncFile get(Path path) {
+        return get(path.getFileName().toString());
+    }
+
     public synchronized static SyncFile get(String fileName) {
         return repo().find(withName(fileName)).firstOrDefault();
+    }
+
+    private synchronized static SyncFile getOrCreate(File file) {
+        return getOrCreate(file.getName());
+    }
+
+    private synchronized static SyncFile getOrCreate(Path path) {
+        return getOrCreate(path.getFileName().toString());
     }
 
     private synchronized static SyncFile getOrCreate(String fileName) {
@@ -88,12 +105,24 @@ public class DB {
         return syncFile;
     }
 
+    public synchronized static void remove(File file) {
+        remove(file.getName());
+    }
+
+    public synchronized static void remove(Path path) {
+        remove(path.getFileName().toString());
+    }
+
+    public synchronized static void remove(String fileName) {
+        repo().remove(withName(fileName));
+    }
+
     public synchronized static long size() {
         return repo().size();
     }
 
-    public synchronized static void setSynced(File storjFile, java.io.File localFile) {
-        SyncFile syncFile = get(storjFile.getName());
+    public synchronized static void setSynced(File storjFile, Path localFile) throws IOException {
+        SyncFile syncFile = get(storjFile);
         syncFile.setCloudData(storjFile);
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.SYNCED);
@@ -101,53 +130,41 @@ public class DB {
     }
 
     public synchronized static void addForDownload(File file) {
-        SyncFile syncFile = getOrCreate(file.getName());
+        SyncFile syncFile = getOrCreate(file);
         syncFile.setCloudData(file);
         syncFile.setState(SyncState.FOR_DOWNLOAD);
         repo().update(syncFile);
     }
 
-    public synchronized static void addForUpload(java.io.File file) {
-        SyncFile syncFile = getOrCreate(file.getName());
-        syncFile.setLocalData(file);
+    public synchronized static void addForUpload(Path path) throws IOException {
+        SyncFile syncFile = getOrCreate(path);
+        syncFile.setLocalData(path);
         syncFile.setState(SyncState.FOR_UPLOAD);
         repo().update(syncFile);
     }
 
     public synchronized static void setDownloadFailed(File file) {
-        SyncFile syncFile = get(file.getName());
+        SyncFile syncFile = get(file);
         syncFile.setState(SyncState.DOWNLOAD_FAILED);
         repo().update(syncFile);
     }
 
-    public synchronized static void setUploadFailed(java.io.File file) {
-        SyncFile syncFile = get(file.getName());
+    public synchronized static void setUploadFailed(Path path) {
+        SyncFile syncFile = get(path);
         syncFile.setState(SyncState.UPLOAD_FAILED);
         repo().update(syncFile);
     }
 
-    public synchronized static void setForLocalDelete(java.io.File file) {
-        SyncFile syncFile = get(file.getName());
+    public synchronized static void setForLocalDelete(Path path) {
+        SyncFile syncFile = get(path);
         syncFile.setState(SyncState.FOR_LOCAL_DELETE);
         repo().update(syncFile);
     }
 
     public synchronized static void setForCloudDelete(File file) {
-        SyncFile syncFile = get(file.getName());
+        SyncFile syncFile = get(file);
         syncFile.setState(SyncState.FOR_CLOUD_DELETE);
         repo().update(syncFile);
-    }
-
-    public synchronized static void remove(File file) {
-        remove(file.getName());
-    }
-
-    public synchronized static void remove(java.io.File file) {
-        remove(file.getName());
-    }
-
-    public synchronized static void remove(String fileName) {
-        repo().remove(withName(fileName));
     }
 
     public static void main(String[] args) {

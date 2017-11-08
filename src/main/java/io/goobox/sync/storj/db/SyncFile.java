@@ -16,7 +16,10 @@
  */
 package io.goobox.sync.storj.db;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 
 import org.dizitart.no2.objects.Id;
@@ -107,9 +110,9 @@ public class SyncFile implements Serializable {
         setStorjSize(file.getSize());
     }
 
-    public void setLocalData(java.io.File file) {
-        setLocalModifiedTime(file.lastModified());
-        setLocalSize(file.length());
+    public void setLocalData(Path path) throws IOException {
+        setLocalModifiedTime(Files.getLastModifiedTime(path).toMillis());
+        setLocalSize(Files.size(path));
     }
 
     @Override
