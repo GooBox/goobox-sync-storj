@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
@@ -25,8 +27,18 @@ import java.util.TimeZone;
 
 public class Utils {
 
+    private static String OS = null;
+
     public static Path getHomeDir() {
-        return Paths.get(System.getProperty("user.home"));
+        String path = System.getProperty("user.home");
+        if (isWindows() && !isPureAscii(path)) {
+            try {
+                path = getMSDOSPath(path);
+            } catch (IOException | InterruptedException e) {
+                throw new IllegalStateException("Cannot determine user home dir", e);
+            }
+        }
+        return Paths.get(path);
     }
 
     public static Path getConfigDir() {
@@ -46,6 +58,36 @@ public class Utils {
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date = sdf.parse(storjTimestamp);
         return date.getTime();
+    }
+
+    private static String getOsName() {
+        if (OS == null) {
+            OS = System.getProperty("os.name");
+        }
+        return OS;
+    }
+
+    private static boolean isWindows() {
+        return getOsName().startsWith("Windows");
+    }
+
+    private static boolean isPureAscii(String path) {
+        return StandardCharsets.US_ASCII.newEncoder().canEncode(path);
+    }
+
+    private static String getMSDOSPath(String path) throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(
+                "cmd /c for %I in (\"" + path + "\") do @echo %~fsI");
+
+        process.waitFor();
+
+        byte[] data = new byte[65536];
+        int size = process.getInputStream().read(data);
+
+        if (size <= 0)
+            return null;
+
+        return new String(data, 0, size).replaceAll("\\r\\n", "");
     }
 
 }
