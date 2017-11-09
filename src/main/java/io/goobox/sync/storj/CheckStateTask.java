@@ -35,9 +35,9 @@ public class CheckStateTask implements Runnable {
     private Bucket gooboxBucket;
     private BlockingQueue<Runnable> tasks;
 
-    public CheckStateTask(Bucket gooboxBucket, BlockingQueue<Runnable> queue) {
+    public CheckStateTask(Bucket gooboxBucket, BlockingQueue<Runnable> tasks) {
         this.gooboxBucket = gooboxBucket;
-        this.tasks = queue;
+        this.tasks = tasks;
     }
 
     @Override
@@ -116,13 +116,8 @@ public class CheckStateTask implements Runnable {
                 DB.commit();
 
                 if (tasks.isEmpty()) {
-                    // Sleep 1 minute to avoid overloading the bridge
-                    System.out.println("Sleeping for 1 minute...");
-                    try {
-                        Thread.sleep(60000);
-                    } catch (InterruptedException e) {
-                        // nothing to do
-                    }
+                    // Sleep some time to avoid overloading the bridge
+                    tasks.add(new SleepTask());
                 }
                 // Add itself to the queueAdd itself to the queue
                 tasks.add(CheckStateTask.this);
