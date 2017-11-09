@@ -35,7 +35,7 @@ public class DB {
 
     private static Nitrite open() {
         if (db == null) {
-            Path dbPath = Utils.getConfigDir().resolve("sync.db");
+            Path dbPath = Utils.getDataDir().resolve("sync.db");
             db = Nitrite.builder()
                     .compressed()
                     .filePath(dbPath.toFile())

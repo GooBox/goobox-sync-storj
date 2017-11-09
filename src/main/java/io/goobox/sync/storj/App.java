@@ -42,7 +42,7 @@ public class App {
             System.exit(1);
         }
 
-        if (!checkAndCreateConfigDir()) {
+        if (!checkAndCreateDataDir()) {
             System.exit(1);
         }
 
@@ -59,13 +59,13 @@ public class App {
     }
 
     private boolean checkAndCreateSyncDir() {
-        System.out.print("Checking if local Goobox folder exists... ");
+        System.out.print("Checking if local Goobox sync folder exists... ");
         return checkAndCreateFolder(Utils.getSyncDir());
     }
 
-    private boolean checkAndCreateConfigDir() {
-        System.out.print("Checking if Goobox config folder exists... ");
-        return checkAndCreateFolder(Utils.getConfigDir());
+    private boolean checkAndCreateDataDir() {
+        System.out.print("Checking if Goobox data folder exists... ");
+        return checkAndCreateFolder(Utils.getDataDir());
     }
 
     private boolean checkAndCreateFolder(Path path) {
