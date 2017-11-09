@@ -25,6 +25,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import net.harawata.appdirs.AppDirsFactory;
+
 public class Utils {
 
     private static String OS = null;
@@ -41,8 +43,8 @@ public class Utils {
         return Paths.get(path);
     }
 
-    public static Path getConfigDir() {
-        return Utils.getHomeDir().resolve(".goobox");
+    public static Path getDataDir() {
+        return Paths.get(AppDirsFactory.getInstance().getUserDataDir("Goobox", null, ""));
     }
 
     public static Path getSyncDir() {
