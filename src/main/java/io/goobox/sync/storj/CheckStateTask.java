@@ -16,9 +16,12 @@
  */
 package io.goobox.sync.storj;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
@@ -46,70 +49,78 @@ public class CheckStateTask implements Runnable {
         Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
-                List<java.io.File> localFiles = new ArrayList<>(Arrays.asList(Utils.getSyncDir().toFile().listFiles()));
+                List<Path> localPaths = getLocalPaths();
                 for (File file : files) {
-                    java.io.File localFile = getLocalFile(file.getName(), localFiles);
-                    if (DB.contains(file)) {
-                        if (localFile == null) {
-                            DB.setForCloudDelete(file);
-                            tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
-                        } else {
-                            try {
-                                SyncFile syncFile = DB.get(file.getName());
-                                boolean cloudChanged = syncFile.getState() != SyncState.UPLOAD_FAILED
-                                        && syncFile.getStorjCreatedTime() != Utils.getTime(file.getCreated());
-                                boolean localChanged = syncFile.getState() != SyncState.DOWNLOAD_FAILED
-                                        && syncFile.getLocalModifiedTime() != localFile.lastModified();
-                                if (cloudChanged && localChanged) {
-                                    // conflict
-                                    // DB.addConflict(file, localFile);
-                                    System.out.println("TODO conflict detected for " + file.getName());
-                                } else if (cloudChanged) {
-                                    // download
-                                    DB.addForDownload(file);
-                                    tasks.add(new DownloadFileTask(gooboxBucket, file));
-                                } else if (localChanged) {
-                                    // upload
-                                    DB.addForUpload(localFile);
-                                    tasks.add(new UploadFileTask(gooboxBucket, localFile));
-                                } else {
-                                    // no change - do nothing
+                    try {
+                        Path localPath = getLocalPath(file.getName(), localPaths);
+                        if (DB.contains(file)) {
+                            if (localPath == null) {
+                                DB.setForCloudDelete(file);
+                                tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
+                            } else {
+                                try {
+                                    SyncFile syncFile = DB.get(file.getName());
+                                    boolean cloudChanged = syncFile.getState() != SyncState.UPLOAD_FAILED
+                                            && syncFile.getStorjCreatedTime() != Utils.getTime(file.getCreated());
+                                    boolean localChanged = syncFile.getState() != SyncState.DOWNLOAD_FAILED
+                                            && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(localPath).toMillis();
+                                    if (cloudChanged && localChanged) {
+                                        // conflict
+                                        // DB.addConflict(file, localFile);
+                                        System.out.println("TODO conflict detected for " + file.getName());
+                                    } else if (cloudChanged) {
+                                        // download
+                                        DB.addForDownload(file);
+                                        tasks.add(new DownloadFileTask(gooboxBucket, file));
+                                    } else if (localChanged) {
+                                        // upload
+                                        DB.addForUpload(localPath);
+                                        tasks.add(new UploadFileTask(gooboxBucket, localPath));
+                                    } else {
+                                        // no change - do nothing
+                                    }
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (ParseException e) {
-                                e.printStackTrace();
+                            }
+                        } else {
+                            if (localPath == null) {
+                                DB.addForDownload(file);
+                                tasks.add(new DownloadFileTask(gooboxBucket, file));
+                            } else {
+                                // DB.addConflict(file, localFile);
+                                System.out.println("TODO conflict detected for " + file.getName());
                             }
                         }
-                    } else {
-                        if (localFile == null) {
-                            DB.addForDownload(file);
-                            tasks.add(new DownloadFileTask(gooboxBucket, file));
-                        } else {
-                            // DB.addConflict(file, localFile);
-                            System.out.println("TODO conflict detected for " + file.getName());
-                        }
-                    }
 
-                    if (localFile != null) {
-                        // Remove from the list of local file to avoid double processing
-                        localFiles.remove(localFile);
+                        if (localPath != null) {
+                            // Remove from the list of local file to avoid double processing
+                            localPaths.remove(localPath);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
 
                 // Process local files without cloud counterpart
-                for (java.io.File file : localFiles) {
-                    if (DB.contains(file)) {
-                        SyncFile syncFile = DB.get(file.getName());
-                        if (syncFile.getState().isSynced()) {
-                            DB.setForLocalDelete(file);
-                            tasks.add(new DeleteLocalFileTask(file));
-                        } else if (syncFile.getState() == SyncState.UPLOAD_FAILED
-                                && syncFile.getLocalModifiedTime() != file.lastModified()) {
-                            DB.addForUpload(file);
-                            tasks.add(new UploadFileTask(gooboxBucket, file));
+                for (Path path : localPaths) {
+                    try {
+                        if (DB.contains(path)) {
+                            SyncFile syncFile = DB.get(path.getFileName());
+                            if (syncFile.getState().isSynced()) {
+                                DB.setForLocalDelete(path);
+                                tasks.add(new DeleteLocalFileTask(path));
+                            } else if (syncFile.getState() == SyncState.UPLOAD_FAILED
+                                    && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(path).toMillis()) {
+                                DB.addForUpload(path);
+                                tasks.add(new UploadFileTask(gooboxBucket, path));
+                            }
+                        } else {
+                            DB.addForUpload(path);
+                            tasks.add(new UploadFileTask(gooboxBucket, path));
                         }
-                    } else {
-                        DB.addForUpload(file);
-                        tasks.add(new UploadFileTask(gooboxBucket, file));
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
 
@@ -130,10 +141,22 @@ public class CheckStateTask implements Runnable {
                 tasks.add(CheckStateTask.this);
             }
 
-            private java.io.File getLocalFile(String name, List<java.io.File> localFiles) {
-                for (java.io.File file : localFiles) {
-                    if (file.getName().equals(name)) {
-                        return file;
+            private List<Path> getLocalPaths() {
+                List<Path> paths = new ArrayList<>();
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(Utils.getSyncDir())) {
+                    for (Path path : stream) {
+                        paths.add(path);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return paths;
+            }
+
+            private Path getLocalPath(String name, List<Path> localPaths) {
+                for (Path path : localPaths) {
+                    if (path.getFileName().toString().equals(name)) {
+                        return path;
                     }
                 }
                 return null;

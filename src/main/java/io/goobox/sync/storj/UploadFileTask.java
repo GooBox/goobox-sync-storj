@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
 import io.goobox.sync.storj.db.DB;
@@ -29,11 +31,11 @@ import io.storj.libstorj.UploadFileCallback;
 public class UploadFileTask implements Runnable {
 
     private Bucket bucket;
-    private java.io.File file;
+    private Path path;
 
-    public UploadFileTask(Bucket bucket, java.io.File file) {
+    public UploadFileTask(Bucket bucket, Path path) {
         this.bucket = bucket;
-        this.file = file;
+        this.path = path;
     }
 
     @Override
@@ -45,9 +47,9 @@ public class UploadFileTask implements Runnable {
             return;
         }
 
-        System.out.println("Uploading file " + file.getName() + "... ");
+        System.out.println("Uploading file " + path.getFileName() + "... ");
 
-        Storj.getInstance().uploadFile(bucket, file.getAbsolutePath(), new UploadFileCallback() {
+        Storj.getInstance().uploadFile(bucket, path.toAbsolutePath().toString(), new UploadFileCallback() {
             @Override
             public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
@@ -68,8 +70,12 @@ public class UploadFileTask implements Runnable {
                         }
 
                         if (storjFile != null) {
-                            DB.setSynced(storjFile, new java.io.File(filePath));
-                            DB.commit();
+                            try {
+                                DB.setSynced(storjFile, path);
+                                DB.commit();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         } else {
                             System.out.println("Cannot find uploaded file with id " + fileId);
                         }
@@ -85,7 +91,7 @@ public class UploadFileTask implements Runnable {
 
             @Override
             public void onError(String filePath, String message) {
-                DB.setUploadFailed(file);
+                DB.setUploadFailed(path);
                 DB.commit();
                 System.out.println("  " + message);
             }
@@ -98,7 +104,7 @@ public class UploadFileTask implements Runnable {
         Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
-                String fileName = file.getName();
+                String fileName = path.getFileName().toString();
                 File storjFile = null;
                 for (File f : files) {
                     if (fileName.equals(f.getName())) {
@@ -110,7 +116,7 @@ public class UploadFileTask implements Runnable {
                     // no file to delete
                     latch.countDown();
                 } else {
-                    System.out.print("Deleting old version of " + file.getName() + " on the cloud... ");
+                    System.out.print("Deleting old version of " + fileName + " on the cloud... ");
 
                     Storj.getInstance().deleteFile(bucket, storjFile, new DeleteFileCallback() {
                         @Override
@@ -130,8 +136,8 @@ public class UploadFileTask implements Runnable {
 
             @Override
             public void onError(String message) {
-                String msg = String.format("Error checkging if file with name %s exists: %s", file.getName(), message);
-                System.out.println(msg);
+                System.out.println(String.format("Error checkging if file with name %s exists: %s",
+                        path.getFileName(), message));
                 latch.countDown();
             }
         });

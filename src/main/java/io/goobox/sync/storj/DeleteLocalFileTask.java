@@ -16,27 +16,28 @@
  */
 package io.goobox.sync.storj;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import io.goobox.sync.storj.db.DB;
 
 public class DeleteLocalFileTask implements Runnable {
 
-    private File file;
+    private Path path;
 
-    public DeleteLocalFileTask(File file) {
-        this.file = file;
+    public DeleteLocalFileTask(Path path) {
+        this.path = path;
     }
 
     @Override
     public void run() {
-        System.out.print("Deleting local file " + file.getName() + "... ");
+        System.out.print("Deleting local file " + path.getFileName() + "... ");
 
         try {
-            boolean success = file.delete();
+            boolean success = Files.deleteIfExists(path);
             if (success) {
                 System.out.println("done");
-                DB.remove(file);
+                DB.remove(path);
                 DB.commit();
             } else {
                 System.out.println("failed");

@@ -16,7 +16,8 @@
  */
 package io.goobox.sync.storj;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -69,18 +70,17 @@ public class App {
     }
 
     private boolean checkAndCreateFolder(Path path) {
-        File dir = path.toFile();
-        if (dir.exists()) {
+        if (Files.exists(path)) {
             System.out.println("yes");
             return true;
         } else {
             System.out.print("no. ");
-            boolean created = dir.mkdir();
-            if (created) {
+            try {
+                Files.createDirectory(path);
                 System.out.println("Folder created.");
                 return true;
-            } else {
-                System.out.println("Failed creating folder.");
+            } catch (IOException e) {
+                System.out.println("Failed creating folder: " + e.getMessage());
                 return false;
             }
         }

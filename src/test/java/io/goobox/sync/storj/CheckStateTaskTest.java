@@ -19,7 +19,16 @@ package io.goobox.sync.storj;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.dizitart.no2.Nitrite;
@@ -98,30 +107,48 @@ public class CheckStateTaskTest {
     }
 
     private void noLocalFilesMock() {
-        new MockUp<java.io.File>() {
+        new MockUp<Files>() {
             @Mock
-            public java.io.File[] listFiles() {
-                return new java.io.File[0];
+            public DirectoryStream<Path> newDirectoryStream(Path dir) {
+                return new DirectoryStream<Path>() {
+                    @Override
+                    public void close() throws IOException {
+                    }
+
+                    @Override
+                    public Iterator<Path> iterator() {
+                        return Collections.emptyIterator();
+                    }
+                };
             }
         };
     }
 
     private void oneLocalFileMock() {
-        new MockUp<java.io.File>() {
+        new MockUp<Files>() {
             @Mock
-            public java.io.File[] listFiles() {
-                java.io.File file = new java.io.File("file-name");
-                return new java.io.File[] { file };
+            public DirectoryStream<Path> newDirectoryStream(Path dir) {
+                return new DirectoryStream<Path>() {
+                    @Override
+                    public void close() throws IOException {
+                    }
+
+                    @Override
+                    public Iterator<Path> iterator() {
+                        Path path = Paths.get("file-name");
+                        return Collections.singleton(path).iterator();
+                    }
+                };
             }
 
             @Mock
-            public long length() {
+            public FileTime getLastModifiedTime(Path path, LinkOption... options) {
+                return FileTime.fromMillis(1510243787000L);
+            }
+
+            @Mock
+            public long size(Path path) {
                 return 12345;
-            }
-
-            @Mock
-            public long lastModified() {
-                return 1510243787000L;
             }
         };
     }
