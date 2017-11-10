@@ -155,7 +155,7 @@ public class CheckStateTask implements Runnable {
 
             private Path getLocalPath(String name, List<Path> localPaths) {
                 for (Path path : localPaths) {
-                    if (path.getFileName().equals(name)) {
+                    if (path.getFileName().toString().equals(name)) {
                         return path;
                     }
                 }
