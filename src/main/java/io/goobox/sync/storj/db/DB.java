@@ -42,7 +42,7 @@ public class DB {
         return db().getRepository(SyncFile.class);
     }
 
-    private static ObjectFilter fileNameFilter(String fileName) {
+    private static ObjectFilter withName(String fileName) {
         return ObjectFilters.eq("name", fileName);
     }
 
@@ -75,7 +75,7 @@ public class DB {
     }
 
     public synchronized static SyncFile get(String fileName) {
-        return repo().find(fileNameFilter(fileName)).firstOrDefault();
+        return repo().find(withName(fileName)).firstOrDefault();
     }
 
     private synchronized static SyncFile getOrCreate(String fileName) {
@@ -139,15 +139,15 @@ public class DB {
     }
 
     public synchronized static void remove(File file) {
-        repo().remove(fileNameFilter(file.getName()));
+        repo().remove(withName(file.getName()));
     }
 
     public synchronized static void remove(java.io.File file) {
-        repo().remove(fileNameFilter(file.getName()));
+        repo().remove(withName(file.getName()));
     }
 
     public synchronized static void remove(String fileName) {
-        repo().remove(fileNameFilter(fileName));
+        repo().remove(withName(fileName));
     }
 
     public static void main(String[] args) {
