@@ -55,16 +55,11 @@
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>io.storj</groupId>
       <artifactId>libstorj-java</artifactId>
-      <version>0.2.1</version>
-    </dependency><dependency>
+      <version>0.3</version>
+    </dependency>
+    <dependency>
       <groupId>org.dizitart</groupId>
       <artifactId>nitrite</artifactId>
       <version>2.0.1</version>
@@ -83,6 +78,18 @@
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna-platform</artifactId>
       <version>4.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jmockit</groupId>
+      <artifactId>jmockit</artifactId>
+      <version>1.36</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   

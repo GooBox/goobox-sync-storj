@@ -30,18 +30,18 @@ public class DB {
     private static Nitrite db;
 
     private static Nitrite db() {
-        return open();
+        if (db == null || db.isClosed()) {
+            db = open();
+        }
+        return db;
     }
 
     private static Nitrite open() {
-        if (db == null) {
-            Path dbPath = Utils.getDataDir().resolve("sync.db");
-            db = Nitrite.builder()
-                    .compressed()
-                    .filePath(dbPath.toFile())
-                    .openOrCreate();
-        }
-        return db;
+        Path dbPath = Utils.getDataDir().resolve("sync.db");
+        return Nitrite.builder()
+                .compressed()
+                .filePath(dbPath.toFile())
+                .openOrCreate();
     }
 
     public synchronized static void close() {
@@ -78,6 +78,10 @@ public class DB {
         return syncFile;
     }
 
+    public synchronized static long size() {
+        return db().getRepository(SyncFile.class).size();
+    }
+
     public synchronized static void setSynced(File storjFile, java.io.File localFile) {
         SyncFile syncFile = get(storjFile.getName());
         syncFile.setCloudData(storjFile);
@@ -93,46 +97,46 @@ public class DB {
         db().getRepository(SyncFile.class).update(syncFile);
     }
 
-    public static void addForUpload(java.io.File file) {
+    public synchronized static void addForUpload(java.io.File file) {
         SyncFile syncFile = getOrCreate(file.getName());
         syncFile.setLocalData(file);
         syncFile.setState(SyncState.FOR_UPLOAD);
         db().getRepository(SyncFile.class).update(syncFile);
     }
 
-    public static void setDownloadFailed(File file) {
+    public synchronized static void setDownloadFailed(File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.DOWNLOAD_FAILED);
         db().getRepository(SyncFile.class).update(syncFile);
     }
 
-    public static void setUploadFailed(java.io.File file) {
+    public synchronized static void setUploadFailed(java.io.File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.UPLOAD_FAILED);
         db().getRepository(SyncFile.class).update(syncFile);
     }
 
-    public static void setForLocalDelete(java.io.File file) {
+    public synchronized static void setForLocalDelete(java.io.File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.FOR_LOCAL_DELETE);
         db().getRepository(SyncFile.class).update(syncFile);
     }
 
-    public static void setForCloudDelete(File file) {
+    public synchronized static void setForCloudDelete(File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.FOR_CLOUD_DELETE);
         db().getRepository(SyncFile.class).update(syncFile);
     }
 
-    public static void remove(File file) {
+    public synchronized static void remove(File file) {
         db().getRepository(SyncFile.class).remove(ObjectFilters.eq("name", file.getName()));
     }
 
-    public static void remove(java.io.File file) {
+    public synchronized static void remove(java.io.File file) {
         db().getRepository(SyncFile.class).remove(ObjectFilters.eq("name", file.getName()));
     }
 
-    public static void remove(String fileName) {
+    public synchronized static void remove(String fileName) {
         db().getRepository(SyncFile.class).remove(ObjectFilters.eq("name", fileName));
     }
 

@@ -35,8 +35,8 @@ public class App {
     }
 
     private void init() {
-        Storj.setConfigDirectory(Utils.getStorjConfigDir().toFile());
-        Storj.setDownloadDirectory(Utils.getSyncDir().toFile());
+        Storj.setConfigDirectory(Utils.getStorjConfigDir());
+        Storj.setDownloadDirectory(Utils.getSyncDir());
 
         if (!checkAndCreateSyncDir()) {
             System.exit(1);
