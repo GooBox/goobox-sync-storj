@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.dizitart.no2.Nitrite;
+import org.dizitart.no2.objects.ObjectFilter;
+import org.dizitart.no2.objects.ObjectRepository;
 import org.dizitart.no2.objects.filters.ObjectFilters;
 
 import io.goobox.sync.storj.Utils;
@@ -34,6 +36,14 @@ public class DB {
             db = open();
         }
         return db;
+    }
+
+    private static ObjectRepository<SyncFile> repo() {
+        return db().getRepository(SyncFile.class);
+    }
+
+    private static ObjectFilter withName(String fileName) {
+        return ObjectFilters.eq("name", fileName);
     }
 
     private static Nitrite open() {
@@ -65,7 +75,7 @@ public class DB {
     }
 
     public synchronized static SyncFile get(String fileName) {
-        return db().getRepository(SyncFile.class).find(ObjectFilters.eq("name", fileName)).firstOrDefault();
+        return repo().find(withName(fileName)).firstOrDefault();
     }
 
     private synchronized static SyncFile getOrCreate(String fileName) {
@@ -73,13 +83,13 @@ public class DB {
         if (syncFile == null) {
             syncFile = new SyncFile();
             syncFile.setName(fileName);
-            db().getRepository(SyncFile.class).insert(syncFile);
+            repo().insert(syncFile);
         }
         return syncFile;
     }
 
     public synchronized static long size() {
-        return db().getRepository(SyncFile.class).size();
+        return repo().size();
     }
 
     public synchronized static void setSynced(File storjFile, java.io.File localFile) {
@@ -87,61 +97,61 @@ public class DB {
         syncFile.setCloudData(storjFile);
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.SYNCED);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void addForDownload(File file) {
         SyncFile syncFile = getOrCreate(file.getName());
         syncFile.setCloudData(file);
         syncFile.setState(SyncState.FOR_DOWNLOAD);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void addForUpload(java.io.File file) {
         SyncFile syncFile = getOrCreate(file.getName());
         syncFile.setLocalData(file);
         syncFile.setState(SyncState.FOR_UPLOAD);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void setDownloadFailed(File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.DOWNLOAD_FAILED);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void setUploadFailed(java.io.File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.UPLOAD_FAILED);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void setForLocalDelete(java.io.File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.FOR_LOCAL_DELETE);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void setForCloudDelete(File file) {
         SyncFile syncFile = get(file.getName());
         syncFile.setState(SyncState.FOR_CLOUD_DELETE);
-        db().getRepository(SyncFile.class).update(syncFile);
+        repo().update(syncFile);
     }
 
     public synchronized static void remove(File file) {
-        db().getRepository(SyncFile.class).remove(ObjectFilters.eq("name", file.getName()));
+        remove(file.getName());
     }
 
     public synchronized static void remove(java.io.File file) {
-        db().getRepository(SyncFile.class).remove(ObjectFilters.eq("name", file.getName()));
+        remove(file.getName());
     }
 
     public synchronized static void remove(String fileName) {
-        db().getRepository(SyncFile.class).remove(ObjectFilters.eq("name", fileName));
+        repo().remove(withName(fileName));
     }
 
     public static void main(String[] args) {
-        List<SyncFile> files = db().getRepository(SyncFile.class).find().toList();
+        List<SyncFile> files = repo().find().toList();
         for (SyncFile file : files) {
             System.out.println(file);
         }
