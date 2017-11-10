@@ -47,7 +47,14 @@ public class CheckStateTaskTest {
     private LinkedBlockingQueue<Runnable> tasks;
 
     @BeforeClass
-    public static void applyGlobalFake() {
+    public static void applySharedFakes() {
+        new MockUp<Storj>() {
+            @Mock
+            private void loadLibrary() {
+                // do not load any native library
+            }
+        };
+
         new MockUp<DB>() {
             @Mock
             private Nitrite open() {
@@ -77,6 +84,11 @@ public class CheckStateTaskTest {
     
     private void oneCloudFileMock() {
         new MockUp<Storj>() {
+            @Mock
+            private void loadLibrary() {
+                // do not load any native library
+            }
+
             @Mock
             public void listFiles(Bucket bucket, ListFilesCallback callback) throws KeysNotFoundException {
                 File file = new File("file-id", "file-name", "2017-11-09T17:51:14.123Z", true, 12345, null, null, null, null);
