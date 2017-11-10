@@ -139,11 +139,11 @@ public class DB {
     }
 
     public synchronized static void remove(File file) {
-        repo().remove(withName(file.getName()));
+        remove(file.getName());
     }
 
     public synchronized static void remove(java.io.File file) {
-        repo().remove(withName(file.getName()));
+        remove(file.getName());
     }
 
     public synchronized static void remove(String fileName) {
