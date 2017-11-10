@@ -27,4 +27,9 @@ Currently the app supports basic two-way sync between the Storj cloud to the loc
 
 The app will poll the Storj cloud and the local `Goobox` sync folder once per minute for any changes in the content. Basic scenarios should work: initial sync, downloading and uploading modified files. More care is required for more complex scenarios: conflicts, download/upload failures, etc.
 
-The app uses an embedded Nitrine database for storing the current sync state of the files. The `list-db.bat` script can be used to dump the content of the database. This might be useful for debugging.
+The app uses an embedded Nitrine database for storing the current sync state of the files. The DB file can be found at the following location:
+- `C:\Users\<user-name>\AppData\Local\Goobox` for Windows
+- `~/.local/share/Goobox` for Linux
+- `~/Library/Application Support/Goobox` for macOS
+
+The `list-db.bat` script can be used to dump the content of the database. This might be useful for debugging.
