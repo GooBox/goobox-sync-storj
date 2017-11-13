@@ -19,19 +19,9 @@ package io.goobox.sync.storj;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.dizitart.no2.Nitrite;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,13 +31,10 @@ import org.junit.runner.RunWith;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
-import io.storj.libstorj.Bucket;
-import io.storj.libstorj.File;
-import io.storj.libstorj.KeysNotFoundException;
-import io.storj.libstorj.ListFilesCallback;
-import io.storj.libstorj.Storj;
-import mockit.Mock;
-import mockit.MockUp;
+import io.goobox.sync.storj.mocks.DBMock;
+import io.goobox.sync.storj.mocks.FileMock;
+import io.goobox.sync.storj.mocks.FilesMock;
+import io.goobox.sync.storj.mocks.StorjMock;
 import mockit.integration.junit4.JMockit;
 
 @RunWith(JMockit.class)
@@ -57,19 +44,7 @@ public class CheckStateTaskTest {
 
     @BeforeClass
     public static void applySharedFakes() {
-        new MockUp<Storj>() {
-            @Mock
-            private void loadLibrary() {
-                // do not load any native library
-            }
-        };
-
-        new MockUp<DB>() {
-            @Mock
-            private Nitrite open() {
-                return Nitrite.builder().compressed().openOrCreate();
-            }
-        };
+        new DBMock();
     }
 
     @Before
@@ -82,110 +57,39 @@ public class CheckStateTaskTest {
         DB.close();
     }
 
-    private void noCloudFilesMock() {
-        new MockUp<Storj>() {
-            @Mock
-            public void listFiles(Bucket bucket, ListFilesCallback callback) throws KeysNotFoundException {
-                callback.onFilesReceived(new File[0]);
-            }
-        };
-    }
-    
-    private void oneCloudFileMock() {
-        new MockUp<Storj>() {
-            @Mock
-            private void loadLibrary() {
-                // do not load any native library
-            }
-
-            @Mock
-            public void listFiles(Bucket bucket, ListFilesCallback callback) throws KeysNotFoundException {
-                File file = new File("file-id", "file-name", "2017-11-09T17:51:14.123Z", true, 12345, null, null, null, null);
-                callback.onFilesReceived(new File[] { file });
-            }
-        };
-    }
-
-    private void noLocalFilesMock() {
-        new MockUp<Files>() {
-            @Mock
-            public DirectoryStream<Path> newDirectoryStream(Path dir) {
-                return new DirectoryStream<Path>() {
-                    @Override
-                    public void close() throws IOException {
-                    }
-
-                    @Override
-                    public Iterator<Path> iterator() {
-                        return Collections.emptyIterator();
-                    }
-                };
-            }
-        };
-    }
-
-    private void oneLocalFileMock() {
-        new MockUp<Files>() {
-            @Mock
-            public DirectoryStream<Path> newDirectoryStream(Path dir) {
-                return new DirectoryStream<Path>() {
-                    @Override
-                    public void close() throws IOException {
-                    }
-
-                    @Override
-                    public Iterator<Path> iterator() {
-                        Path path = Paths.get("file-name");
-                        return Collections.singleton(path).iterator();
-                    }
-                };
-            }
-
-            @Mock
-            public FileTime getLastModifiedTime(Path path, LinkOption... options) {
-                return FileTime.fromMillis(1510243787000L);
-            }
-
-            @Mock
-            public long size(Path path) {
-                return 12345;
-            }
-        };
-    }
-
     @Test
     public void emptyCloudAndLocalTest() throws InterruptedException {
-        noCloudFilesMock();
-        noLocalFilesMock();
+        new StorjMock();
+        new FilesMock();
 
         new CheckStateTask(null, tasks).run();
 
-        assertEquals(2, tasks.size());
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
 
         assertEquals(0, DB.size());
     }
 
     @Test
     public void fileInCloudEmptyLocalTest() throws InterruptedException, ParseException {
-        oneCloudFileMock();
-        noLocalFilesMock();
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock();
 
         new CheckStateTask(null, tasks).run();
 
-        assertEquals(2, tasks.size());
         assertEquals(DownloadFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
-        assertTrue(DB.contains("file-name"));
+        assertTrue(DB.contains(StorjMock.FILE_1.getName()));
 
-        SyncFile syncFile = DB.get("file-name");
-        assertEquals("file-name", syncFile.getName());
-        assertEquals("file-id", syncFile.getStorjId());
-        assertEquals(Utils.getTime("2017-11-09T17:51:14.123Z"), syncFile.getStorjCreatedTime());
-        assertEquals(12345, syncFile.getStorjSize());
+        SyncFile syncFile = DB.get(StorjMock.FILE_1.getName());
+        assertEquals(StorjMock.FILE_1.getName(), syncFile.getName());
+        assertEquals(StorjMock.FILE_1.getId(), syncFile.getStorjId());
+        assertEquals(Utils.getTime(StorjMock.FILE_1.getCreated()), syncFile.getStorjCreatedTime());
+        assertEquals(StorjMock.FILE_1.getSize(), syncFile.getStorjSize());
         assertEquals(0, syncFile.getLocalModifiedTime());
         assertEquals(0, syncFile.getLocalSize());
         assertEquals(SyncState.FOR_DOWNLOAD, syncFile.getState());
@@ -193,26 +97,54 @@ public class CheckStateTaskTest {
 
     @Test
     public void emptyCloudFileInLocalTest() throws InterruptedException, ParseException {
-        noCloudFilesMock();
-        oneLocalFileMock();
+        new StorjMock();
+        new FilesMock(FileMock.FILE_1);
 
         new CheckStateTask(null, tasks).run();
 
-        assertEquals(2, tasks.size());
         assertEquals(UploadFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
-        assertTrue(DB.contains("file-name"));
+        assertTrue(DB.contains(FileMock.FILE_1.getName()));
 
-        SyncFile syncFile = DB.get("file-name");
-        assertEquals("file-name", syncFile.getName());
+        SyncFile syncFile = DB.get(FileMock.FILE_1.getName());
+        assertEquals(FileMock.FILE_1.getName(), syncFile.getName());
         assertEquals(null, syncFile.getStorjId());
         assertEquals(0, syncFile.getStorjCreatedTime());
         assertEquals(0, syncFile.getStorjSize());
-        assertEquals(1510243787000L, syncFile.getLocalModifiedTime());
-        assertEquals(12345, syncFile.getLocalSize());
+        assertEquals(FileMock.FILE_1.lastModified(), syncFile.getLocalModifiedTime());
+        assertEquals(FileMock.FILE_1.size(), syncFile.getLocalSize());
         assertEquals(SyncState.FOR_UPLOAD, syncFile.getState());
+    }
+
+    @Test
+    public void encryptedFileInCloudEmptyLocalTest() throws InterruptedException {
+        new StorjMock(StorjMock.ENCRYPTED_FILE);
+        new FilesMock();
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(0, DB.size());
+    }
+
+    @Test
+    public void encryptedFileInCloudAndLocalTest() throws InterruptedException {
+        new StorjMock(StorjMock.ENCRYPTED_FILE);
+        new FilesMock(FileMock.ENCRYPTED_FILE);
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(0, DB.size());
     }
 
 }
