@@ -53,43 +53,46 @@ public class CheckStateTask implements Runnable {
                 for (File file : files) {
                     try {
                         Path localPath = getLocalPath(file.getName(), localPaths);
-                        if (DB.contains(file)) {
-                            if (localPath == null) {
-                                DB.setForCloudDelete(file);
-                                tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
-                            } else {
-                                try {
-                                    SyncFile syncFile = DB.get(file.getName());
-                                    boolean cloudChanged = syncFile.getState() != SyncState.UPLOAD_FAILED
-                                            && syncFile.getStorjCreatedTime() != Utils.getTime(file.getCreated());
-                                    boolean localChanged = syncFile.getState() != SyncState.DOWNLOAD_FAILED
-                                            && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(localPath).toMillis();
-                                    if (cloudChanged && localChanged) {
-                                        // conflict
-                                        // DB.addConflict(file, localFile);
-                                        System.out.println("TODO conflict detected for " + file.getName());
-                                    } else if (cloudChanged) {
-                                        // download
-                                        DB.addForDownload(file);
-                                        tasks.add(new DownloadFileTask(gooboxBucket, file));
-                                    } else if (localChanged) {
-                                        // upload
-                                        DB.addForUpload(localPath);
-                                        tasks.add(new UploadFileTask(gooboxBucket, localPath));
-                                    } else {
-                                        // no change - do nothing
+                        // process only files encrypted with the current key
+                        if (file.isDecrypted()) {
+                            if (DB.contains(file)) {
+                                if (localPath == null) {
+                                    DB.setForCloudDelete(file);
+                                    tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
+                                } else {
+                                    try {
+                                        SyncFile syncFile = DB.get(file.getName());
+                                        boolean cloudChanged = syncFile.getState() != SyncState.UPLOAD_FAILED
+                                                && syncFile.getStorjCreatedTime() != Utils.getTime(file.getCreated());
+                                        boolean localChanged = syncFile.getState() != SyncState.DOWNLOAD_FAILED
+                                                && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(localPath).toMillis();
+                                        if (cloudChanged && localChanged) {
+                                            // conflict
+                                            // DB.addConflict(file, localFile);
+                                            System.out.println("TODO conflict detected for " + file.getName());
+                                        } else if (cloudChanged) {
+                                            // download
+                                            DB.addForDownload(file);
+                                            tasks.add(new DownloadFileTask(gooboxBucket, file));
+                                        } else if (localChanged) {
+                                            // upload
+                                            DB.addForUpload(localPath);
+                                            tasks.add(new UploadFileTask(gooboxBucket, localPath));
+                                        } else {
+                                            // no change - do nothing
+                                        }
+                                    } catch (ParseException e) {
+                                        e.printStackTrace();
                                     }
-                                } catch (ParseException e) {
-                                    e.printStackTrace();
                                 }
-                            }
-                        } else {
-                            if (localPath == null) {
-                                DB.addForDownload(file);
-                                tasks.add(new DownloadFileTask(gooboxBucket, file));
                             } else {
-                                // DB.addConflict(file, localFile);
-                                System.out.println("TODO conflict detected for " + file.getName());
+                                if (localPath == null) {
+                                    DB.addForDownload(file);
+                                    tasks.add(new DownloadFileTask(gooboxBucket, file));
+                                } else {
+                                    // DB.addConflict(file, localFile);
+                                    System.out.println("TODO conflict detected for " + file.getName());
+                                }
                             }
                         }
 
