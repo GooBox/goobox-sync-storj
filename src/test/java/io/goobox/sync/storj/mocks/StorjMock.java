@@ -16,7 +16,13 @@
  */
 package io.goobox.sync.storj.mocks;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
 import io.storj.libstorj.Bucket;
+import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.File;
 import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.ListFilesCallback;
@@ -33,10 +39,10 @@ public class StorjMock extends MockUp<Storj> {
     public static final File ENCRYPTED_FILE = new File("encrypted-file-id", "encrypted-file-name",
             "2017-11-13T10:10:28.243Z", false, 23423313, null, null, null, null);
 
-    private File[] files;
+    private List<File> files;
 
     public StorjMock(File... files) {
-        this.files = files;
+        this.files = new ArrayList<>(Arrays.asList(files));
     }
 
     @Mock
@@ -46,7 +52,22 @@ public class StorjMock extends MockUp<Storj> {
 
     @Mock
     public void listFiles(Bucket bucket, ListFilesCallback callback) throws KeysNotFoundException {
-        callback.onFilesReceived(files);
+        callback.onFilesReceived(files.toArray(new File[files.size()]));
+    }
+
+    @Mock
+    public void deleteFile(Bucket bucket, File file, DeleteFileCallback callback) throws KeysNotFoundException {
+        Iterator<File> i = files.iterator();
+        while (i.hasNext()) {
+            File f = i.next();
+            if (f.equals(file)) {
+                i.remove();
+                callback.onFileDeleted();
+            } else {
+                callback.onError("file not found");
+            }
+            return;
+        }
     }
 
 }
