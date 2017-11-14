@@ -16,12 +16,17 @@
  */
 package io.goobox.sync.storj.mocks;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 
 public class FileMock {
 
     public static final FileMock FILE_1 = new FileMock("file-1-name", 1510243787000L, 12345);
+    public static final FileMock FILE_2 = new FileMock("file-2-name", 1510667191000L, 983249);
     public static final FileMock ENCRYPTED_FILE = new FileMock("encrypted-file-name", 1510566682000L, 23423313);
+
+    private static final String PARENT_FOLDER = "/some/local/folder";
 
     private String name;
     private long lastModified;
@@ -31,6 +36,10 @@ public class FileMock {
         this.name = name;
         this.lastModified = lastModified;
         this.size = size;
+    }
+
+    public Path getPath() {
+        return Paths.get(PARENT_FOLDER).resolve(name);
     }
 
     public String getName() {

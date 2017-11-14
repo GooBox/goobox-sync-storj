@@ -122,7 +122,7 @@ public class DB {
     }
 
     public synchronized static void setSynced(File storjFile, Path localFile) throws IOException {
-        SyncFile syncFile = get(storjFile);
+        SyncFile syncFile = getOrCreate(storjFile);
         syncFile.setCloudData(storjFile);
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.SYNCED);

@@ -21,9 +21,9 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -32,10 +32,10 @@ import mockit.MockUp;
 
 public class FilesMock extends MockUp<Files> {
 
-    private FileMock[] files;
+    private List<FileMock> files;
 
     public FilesMock(FileMock... files) {
-        this.files = files;
+        this.files = new ArrayList<>(Arrays.asList(files));
     }
 
     @Mock
@@ -49,7 +49,7 @@ public class FilesMock extends MockUp<Files> {
             public Iterator<Path> iterator() {
                 List<Path> paths = new ArrayList<>();
                 for (FileMock file : files) {
-                    paths.add(Paths.get(file.getName()));
+                    paths.add(file.getPath());
                 }
                 return paths.iterator();
             }
@@ -58,9 +58,8 @@ public class FilesMock extends MockUp<Files> {
 
     @Mock
     public FileTime getLastModifiedTime(Path path, LinkOption... options) {
-        String fileName = path.getFileName().toString();
         for (FileMock file : files) {
-            if (file.getName().equals(fileName)) {
+            if (file.getPath().equals(path)) {
                 return file.getLastModifiedTime();
             }
         }
@@ -69,13 +68,37 @@ public class FilesMock extends MockUp<Files> {
 
     @Mock
     public long size(Path path) {
-        String fileName = path.getFileName().toString();
         for (FileMock file : files) {
-            if (file.getName().equals(fileName)) {
+            if (file.getPath().equals(path)) {
                 return file.size();
             }
         }
         return -1;
+    }
+
+    @Mock
+    public boolean exists(Path path, LinkOption... options) {
+        for (FileMock file : files) {
+            if (file.getPath().equals(path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Mock
+    public boolean deleteIfExists(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Iterator<FileMock> i = files.iterator();
+            while (i.hasNext()) {
+                FileMock file = i.next();
+                if (file.getPath().equals(path)) {
+                    i.remove();
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }
