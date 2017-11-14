@@ -28,6 +28,8 @@ public class StorjMock extends MockUp<Storj> {
 
     public static final File FILE_1 = new File("file-1-id", "file-1-name", "2017-11-09T17:51:14.123Z", true, 12345,
             null, null, null, null);
+    public static final File FILE_2 = new File("file-2-id", "file-2-name", "2017-11-14T15:44:20.832Z", true, 983249,
+            null, null, null, null);
     public static final File ENCRYPTED_FILE = new File("encrypted-file-id", "encrypted-file-name",
             "2017-11-13T10:10:28.243Z", false, 23423313, null, null, null, null);
 
