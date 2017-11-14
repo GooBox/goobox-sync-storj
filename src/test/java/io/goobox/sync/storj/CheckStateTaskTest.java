@@ -29,8 +29,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.goobox.sync.storj.db.DB;
-import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
+import io.goobox.sync.storj.helpers.AssertSyncFile;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
 import io.goobox.sync.storj.mocks.FilesMock;
@@ -84,15 +84,7 @@ public class CheckStateTaskTest {
 
         assertEquals(1, DB.size());
         assertTrue(DB.contains(StorjMock.FILE_1));
-
-        SyncFile syncFile = DB.get(StorjMock.FILE_1);
-        assertEquals(StorjMock.FILE_1.getName(), syncFile.getName());
-        assertEquals(StorjMock.FILE_1.getId(), syncFile.getStorjId());
-        assertEquals(Utils.getTime(StorjMock.FILE_1.getCreated()), syncFile.getStorjCreatedTime());
-        assertEquals(StorjMock.FILE_1.getSize(), syncFile.getStorjSize());
-        assertEquals(0, syncFile.getLocalModifiedTime());
-        assertEquals(0, syncFile.getLocalSize());
-        assertEquals(SyncState.FOR_DOWNLOAD, syncFile.getState());
+        AssertSyncFile.assertWith(StorjMock.FILE_1, SyncState.FOR_DOWNLOAD);
     }
 
     @Test
@@ -108,15 +100,7 @@ public class CheckStateTaskTest {
 
         assertEquals(1, DB.size());
         assertTrue(DB.contains(FileMock.FILE_1.getPath()));
-
-        SyncFile syncFile = DB.get(FileMock.FILE_1.getPath());
-        assertEquals(FileMock.FILE_1.getName(), syncFile.getName());
-        assertEquals(null, syncFile.getStorjId());
-        assertEquals(0, syncFile.getStorjCreatedTime());
-        assertEquals(0, syncFile.getStorjSize());
-        assertEquals(FileMock.FILE_1.lastModified(), syncFile.getLocalModifiedTime());
-        assertEquals(FileMock.FILE_1.size(), syncFile.getLocalSize());
-        assertEquals(SyncState.FOR_UPLOAD, syncFile.getState());
+        AssertSyncFile.assertWith(FileMock.FILE_1, SyncState.FOR_UPLOAD);
     }
 
     @Test
