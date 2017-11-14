@@ -83,9 +83,9 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
-        assertTrue(DB.contains(StorjMock.FILE_1.getName()));
+        assertTrue(DB.contains(StorjMock.FILE_1));
 
-        SyncFile syncFile = DB.get(StorjMock.FILE_1.getName());
+        SyncFile syncFile = DB.get(StorjMock.FILE_1);
         assertEquals(StorjMock.FILE_1.getName(), syncFile.getName());
         assertEquals(StorjMock.FILE_1.getId(), syncFile.getStorjId());
         assertEquals(Utils.getTime(StorjMock.FILE_1.getCreated()), syncFile.getStorjCreatedTime());
@@ -107,9 +107,9 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
-        assertTrue(DB.contains(FileMock.FILE_1.getName()));
+        assertTrue(DB.contains(FileMock.FILE_1.getPath()));
 
-        SyncFile syncFile = DB.get(FileMock.FILE_1.getName());
+        SyncFile syncFile = DB.get(FileMock.FILE_1.getPath());
         assertEquals(FileMock.FILE_1.getName(), syncFile.getName());
         assertEquals(null, syncFile.getStorjId());
         assertEquals(0, syncFile.getStorjCreatedTime());
