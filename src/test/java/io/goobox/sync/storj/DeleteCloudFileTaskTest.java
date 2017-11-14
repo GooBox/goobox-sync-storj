@@ -17,8 +17,8 @@
 package io.goobox.sync.storj;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
@@ -63,7 +63,7 @@ public class DeleteCloudFileTaskTest {
         new DeleteCloudFileTask(null, StorjMock.FILE_1).run();
 
         assertEquals(0, DB.size());
-        assertNull(DB.get(StorjMock.FILE_1));
+        assertFalse(DB.contains(StorjMock.FILE_1));
     }
 
     @Test
@@ -77,8 +77,8 @@ public class DeleteCloudFileTaskTest {
         new DeleteCloudFileTask(null, StorjMock.FILE_1).run();
 
         assertEquals(1, DB.size());
-        assertNull(DB.get(StorjMock.FILE_1));
-        assertNotNull(DB.get(StorjMock.FILE_2));
+        assertFalse(DB.contains(StorjMock.FILE_1));
+        assertTrue(DB.contains(StorjMock.FILE_2));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class DeleteCloudFileTaskTest {
         new DeleteCloudFileTask(null, nonExisting).run();
 
         assertEquals(1, DB.size());
-        assertNotNull(DB.get(StorjMock.FILE_1));
+        assertTrue(DB.contains(StorjMock.FILE_1));
     }
 
 }

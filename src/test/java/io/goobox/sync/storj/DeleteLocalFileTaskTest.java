@@ -18,8 +18,6 @@ package io.goobox.sync.storj;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -66,7 +64,7 @@ public class DeleteLocalFileTaskTest {
 
         assertFalse(Files.exists(FileMock.FILE_1.getPath()));
         assertEquals(0, DB.size());
-        assertNull(DB.get(FileMock.FILE_1.getPath()));
+        assertFalse(DB.contains(FileMock.FILE_1.getPath()));
     }
 
     @Test
@@ -81,8 +79,8 @@ public class DeleteLocalFileTaskTest {
         assertFalse(Files.exists(FileMock.FILE_1.getPath()));
         assertTrue(Files.exists(FileMock.FILE_2.getPath()));
         assertEquals(1, DB.size());
-        assertNull(DB.get(FileMock.FILE_1.getPath()));
-        assertNotNull(DB.get(FileMock.FILE_2.getPath()));
+        assertFalse(DB.contains(FileMock.FILE_1.getPath()));
+        assertTrue(DB.contains(FileMock.FILE_2.getPath()));
     }
 
     @Test
@@ -95,7 +93,7 @@ public class DeleteLocalFileTaskTest {
 
         assertTrue(Files.exists(FileMock.FILE_1.getPath()));
         assertEquals(1, DB.size());
-        assertNotNull(DB.get(FileMock.FILE_1.getPath()));
+        assertTrue(DB.contains(FileMock.FILE_1.getPath()));
     }
 
 }

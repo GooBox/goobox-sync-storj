@@ -23,6 +23,7 @@ import java.util.List;
 
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
+import io.storj.libstorj.DownloadFileCallback;
 import io.storj.libstorj.File;
 import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.ListFilesCallback;
@@ -67,6 +68,15 @@ public class StorjMock extends MockUp<Storj> {
                 callback.onError("file not found");
             }
             return;
+        }
+    }
+
+    @Mock
+    public void downloadFile(Bucket bucket, File file, DownloadFileCallback callback) throws KeysNotFoundException {
+        if (FILE_1.equals(file)) {
+            callback.onComplete(file, FileMock.FILE_1.getPath().toString());
+        } else {
+            callback.onError(file, "error downloading");
         }
     }
 
