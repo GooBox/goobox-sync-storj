@@ -167,6 +167,14 @@ public class DB {
         repo().update(syncFile);
     }
 
+    public static void setConflict(File storjFile, Path localFile) throws IOException {
+        SyncFile syncFile = getOrCreate(storjFile);
+        syncFile.setCloudData(storjFile);
+        syncFile.setLocalData(localFile);
+        syncFile.setState(SyncState.CONFLICT);
+        repo().update(syncFile);
+    }
+
     public static void main(String[] args) {
         List<SyncFile> files = repo().find().toList();
         for (SyncFile file : files) {

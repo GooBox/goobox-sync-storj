@@ -74,7 +74,7 @@ public class CheckStateTaskTest {
     }
 
     @Test
-    public void cloudAndLocalInSyncTest() throws Exception {
+    public void cloudAndLocalFileInSyncTest() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
@@ -87,6 +87,7 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.FILE_1));
         AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
 
@@ -165,6 +166,7 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.FILE_1));
         AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.FILE_1, SyncState.FOR_CLOUD_DELETE);
     }
 
@@ -193,6 +195,7 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.FILE_1));
         AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.FILE_1, SyncState.FOR_LOCAL_DELETE);
     }
 
@@ -211,6 +214,7 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.MODIFIED_FILE_1));
         AssertSyncFile.assertWith(StorjMock.MODIFIED_FILE_1, FileMock.FILE_1, SyncState.FOR_DOWNLOAD);
     }
 
@@ -229,7 +233,98 @@ public class CheckStateTaskTest {
         assertTrue(tasks.isEmpty());
 
         assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.FILE_1));
         AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.MODIFIED_FILE_1, SyncState.FOR_UPLOAD);
+    }
+
+    @Test
+    public void modifiedBothLocalAndCloudFileTest() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile1();
+        filesMock.modifyFile1();
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.MODIFIED_FILE_1));
+        AssertSyncFile.assertWith(StorjMock.MODIFIED_FILE_1, FileMock.MODIFIED_FILE_1, SyncState.CONFLICT);
+    }
+
+    @Test
+    public void sameFileInCloudAndLocalNoDBTest() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.FILE_1));
+        AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
+    }
+
+    @Test
+    public void modifiedFileInCloudAndLocalNoDBTest() throws Exception {
+        new StorjMock(StorjMock.MODIFIED_FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.MODIFIED_FILE_1));
+        AssertSyncFile.assertWith(StorjMock.MODIFIED_FILE_1, FileMock.FILE_1, SyncState.CONFLICT);
+    }
+
+    @Test
+    public void modifiedCloudFileInConflictTest() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.setConflict(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile1();
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.MODIFIED_FILE_1));
+        AssertSyncFile.assertWith(StorjMock.MODIFIED_FILE_1, FileMock.FILE_1, SyncState.CONFLICT);
+    }
+
+    @Test
+    public void modifiedLocalFileInConflictTest() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.setConflict(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        filesMock.modifyFile1();
+
+        new CheckStateTask(null, tasks).run();
+
+        assertEquals(SleepTask.class, tasks.poll().getClass());
+        assertEquals(CheckStateTask.class, tasks.poll().getClass());
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(1, DB.size());
+        assertTrue(DB.contains(StorjMock.FILE_1));
+        AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.MODIFIED_FILE_1, SyncState.CONFLICT);
     }
 
 }

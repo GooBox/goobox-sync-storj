@@ -67,17 +67,26 @@ public class CheckStateTask implements Runnable {
                                         boolean localChanged = syncFile.getState() != SyncState.DOWNLOAD_FAILED
                                                 && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(localPath).toMillis();
                                         if (cloudChanged && localChanged) {
-                                            // conflict
-                                            // DB.addConflict(file, localFile);
-                                            System.out.println("TODO conflict detected for " + file.getName());
+                                            // both local and cloud has been changed - conflict
+                                            DB.setConflict(file, localPath);
                                         } else if (cloudChanged) {
-                                            // download
-                                            DB.addForDownload(file);
-                                            tasks.add(new DownloadFileTask(gooboxBucket, file));
+                                            if (syncFile.getState().isConflict()) {
+                                                // the has been in conflict before - keep the conflict
+                                                DB.setConflict(file, localPath);
+                                            } else {
+                                                // download
+                                                DB.addForDownload(file);
+                                                tasks.add(new DownloadFileTask(gooboxBucket, file));
+                                            }
                                         } else if (localChanged) {
-                                            // upload
-                                            DB.addForUpload(localPath);
-                                            tasks.add(new UploadFileTask(gooboxBucket, localPath));
+                                            if (syncFile.getState().isConflict()) {
+                                                // the has been in conflict before - keep the conflict
+                                                DB.setConflict(file, localPath);
+                                            } else {
+                                                // upload
+                                                DB.addForUpload(localPath);
+                                                tasks.add(new UploadFileTask(gooboxBucket, localPath));
+                                            }
                                         } else {
                                             // no change - do nothing
                                         }
@@ -90,8 +99,13 @@ public class CheckStateTask implements Runnable {
                                     DB.addForDownload(file);
                                     tasks.add(new DownloadFileTask(gooboxBucket, file));
                                 } else {
-                                    // DB.addConflict(file, localFile);
-                                    System.out.println("TODO conflict detected for " + file.getName());
+                                    // check if local and cloud file are same
+                                    // TODO #29 check HMAC instead of size
+                                    if (file.getSize() == Files.size(localPath)) {
+                                        DB.setSynced(file, localPath);
+                                    } else {
+                                        DB.setConflict(file, localPath);
+                                    }
                                 }
                             }
                         }
