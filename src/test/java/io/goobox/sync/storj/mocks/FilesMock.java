@@ -103,4 +103,13 @@ public class FilesMock extends MockUp<Files> {
         return false;
     }
 
+    public void modifyFile1() {
+        if (files.contains(FileMock.FILE_1)) {
+            files.remove(FileMock.FILE_1);
+            files.add(FileMock.MODIFIED_FILE_1);
+        } else {
+            throw new IllegalStateException("FILE_1 not found");
+        }
+    }
+
 }

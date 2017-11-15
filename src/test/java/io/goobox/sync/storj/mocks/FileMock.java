@@ -25,6 +25,7 @@ public class FileMock {
     public static final FileMock FILE_1 = new FileMock("file-1-name", 1510243787000L, 12345);
     public static final FileMock FILE_2 = new FileMock("file-2-name", 1510667191000L, 983249);
     public static final FileMock ENCRYPTED_FILE = new FileMock("encrypted-file-name", 1510566682000L, 23423313);
+    public static final FileMock MODIFIED_FILE_1 = new FileMock("file-1-name", 1510739536L, 12653);
 
     private static final String PARENT_FOLDER = "/some/local/folder";
 

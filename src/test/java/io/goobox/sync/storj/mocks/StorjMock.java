@@ -40,6 +40,8 @@ public class StorjMock extends MockUp<Storj> {
             null, null, null, null);
     public static final File ENCRYPTED_FILE = new File("encrypted-file-id", "encrypted-file-name",
             "2017-11-13T10:10:28.243Z", false, 23423313, null, null, null, null);
+    public static final File MODIFIED_FILE_1 = new File("modified-file-1-id", "file-1-name", "2017-11-15T11:43:20.622Z",
+            true, 12421, null, null, null, null);
 
     private Set<File> files;
 
@@ -92,6 +94,15 @@ public class StorjMock extends MockUp<Storj> {
             }
         } else {
             callback.onError(filePath, "error uploading");
+        }
+    }
+
+    public void modifyFile1() {
+        if (files.contains(FILE_1)) {
+            files.remove(FILE_1);
+            files.add(MODIFIED_FILE_1);
+        } else {
+            throw new IllegalStateException("FILE_1 not found");
         }
     }
 
