@@ -71,7 +71,7 @@ public class CheckStateTask implements Runnable {
                                             DB.setConflict(file, localPath);
                                         } else if (cloudChanged) {
                                             if (syncFile.getState().isConflict()) {
-                                                // the has been in conflict before - keep the conflict
+                                                // the file has been in conflict before - keep the conflict
                                                 DB.setConflict(file, localPath);
                                             } else {
                                                 // download
@@ -80,7 +80,7 @@ public class CheckStateTask implements Runnable {
                                             }
                                         } else if (localChanged) {
                                             if (syncFile.getState().isConflict()) {
-                                                // the has been in conflict before - keep the conflict
+                                                // the file has been in conflict before - keep the conflict
                                                 DB.setConflict(file, localPath);
                                             } else {
                                                 // upload
