@@ -19,9 +19,6 @@ package io.goobox.sync.storj;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.text.ParseException;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -55,7 +52,7 @@ public class UploadFileTaskTest {
     }
 
     @Test
-    public void successfulUploadTest() throws IOException, ParseException {
+    public void successfulUploadTest() throws Exception {
         new StorjMock();
         new FilesMock(FileMock.FILE_1);
 
@@ -69,7 +66,7 @@ public class UploadFileTaskTest {
     }
 
     @Test
-    public void successfulUploadOverwriteTest() throws IOException, ParseException {
+    public void successfulUploadOverwriteTest() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
@@ -83,7 +80,7 @@ public class UploadFileTaskTest {
     }
 
     @Test
-    public void erroneousUploadTest() throws IOException, ParseException {
+    public void erroneousUploadTest() throws Exception {
         new StorjMock();
         new FilesMock(FileMock.FILE_2);
 

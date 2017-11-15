@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -55,7 +54,7 @@ public class DeleteLocalFileTaskTest {
     }
 
     @Test
-    public void oneLocalDeleteTest() throws IOException {
+    public void oneLocalDeleteTest() throws Exception {
         new FilesMock(FileMock.FILE_1);
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
@@ -68,7 +67,7 @@ public class DeleteLocalFileTaskTest {
     }
 
     @Test
-    public void oneOfTwoLocalDeleteTest() throws IOException {
+    public void oneOfTwoLocalDeleteTest() throws Exception {
         new FilesMock(FileMock.FILE_1, FileMock.FILE_2);
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
@@ -84,7 +83,7 @@ public class DeleteLocalFileTaskTest {
     }
 
     @Test
-    public void nonExistingLocalDeleteTest() throws IOException {
+    public void nonExistingLocalDeleteTest() throws Exception {
         new FilesMock(FileMock.FILE_1);
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());

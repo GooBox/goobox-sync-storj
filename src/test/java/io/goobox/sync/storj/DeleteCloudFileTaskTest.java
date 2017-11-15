@@ -20,8 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -54,7 +52,7 @@ public class DeleteCloudFileTaskTest {
     }
 
     @Test
-    public void oneCloudDeleteTest() throws IOException {
+    public void oneCloudDeleteTest() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
@@ -67,7 +65,7 @@ public class DeleteCloudFileTaskTest {
     }
 
     @Test
-    public void oneOfTwoCloudDeleteTest() throws IOException {
+    public void oneOfTwoCloudDeleteTest() throws Exception {
         new StorjMock(StorjMock.FILE_1, StorjMock.FILE_2);
         new FilesMock(FileMock.FILE_1, FileMock.FILE_2);
 
@@ -82,7 +80,7 @@ public class DeleteCloudFileTaskTest {
     }
 
     @Test
-    public void nonExistingLocalDeleteTest() throws IOException {
+    public void nonExistingLocalDeleteTest() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 

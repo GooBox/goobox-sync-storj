@@ -19,9 +19,6 @@ package io.goobox.sync.storj;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.text.ParseException;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -55,7 +52,7 @@ public class DownloadFileTaskTest {
     }
 
     @Test
-    public void successfulDownloadTest() throws IOException, ParseException {
+    public void successfulDownloadTest() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
@@ -69,7 +66,7 @@ public class DownloadFileTaskTest {
     }
 
     @Test
-    public void erroneousDownloadTest() throws IOException, ParseException {
+    public void erroneousDownloadTest() throws Exception {
         new StorjMock(StorjMock.FILE_2);
 
         DB.addForDownload(StorjMock.FILE_2);
