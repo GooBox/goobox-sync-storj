@@ -16,10 +16,10 @@
  */
 package io.goobox.sync.storj.mocks;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
@@ -28,6 +28,7 @@ import io.storj.libstorj.File;
 import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.ListFilesCallback;
 import io.storj.libstorj.Storj;
+import io.storj.libstorj.UploadFileCallback;
 import mockit.Mock;
 import mockit.MockUp;
 
@@ -40,10 +41,10 @@ public class StorjMock extends MockUp<Storj> {
     public static final File ENCRYPTED_FILE = new File("encrypted-file-id", "encrypted-file-name",
             "2017-11-13T10:10:28.243Z", false, 23423313, null, null, null, null);
 
-    private List<File> files;
+    private Set<File> files;
 
     public StorjMock(File... files) {
-        this.files = new ArrayList<>(Arrays.asList(files));
+        this.files = new HashSet<>(Arrays.asList(files));
     }
 
     @Mock
@@ -77,6 +78,20 @@ public class StorjMock extends MockUp<Storj> {
             callback.onComplete(file, FileMock.FILE_1.getPath().toString());
         } else {
             callback.onError(file, "error downloading");
+        }
+    }
+
+    @Mock
+    public void uploadFile(Bucket bucket, String filePath, UploadFileCallback callback) throws KeysNotFoundException {
+        if (FileMock.FILE_1.getPath().toString().equals(filePath)) {
+            if (files.contains(FILE_1)) {
+                callback.onError(filePath, "File already exists");
+            } else {
+                files.add(FILE_1);
+                callback.onComplete(filePath, FILE_1.getId());
+            }
+        } else {
+            callback.onError(filePath, "error uploading");
         }
     }
 
