@@ -24,18 +24,20 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import mockit.Mock;
 import mockit.MockUp;
 
 public class FilesMock extends MockUp<Files> {
 
-    private List<FileMock> files;
+    private Set<FileMock> files;
 
     public FilesMock(FileMock... files) {
-        this.files = new ArrayList<>(Arrays.asList(files));
+        this.files = new HashSet<>(Arrays.asList(files));
     }
 
     @Mock
