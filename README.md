@@ -25,7 +25,9 @@ The app uses the auth file in the `<user.home>/.storj` folder created by the lib
 
 Currently the app supports basic two-way sync between the Storj cloud to the local file system. The app will sync the content of the bucket with name `Goobox` to the local folder with name `Goobox`, which is a subfolder of the user home folder. If either the bucket or the local folder do not exist, the app will automatically create empty ones.
 
-The app will poll the Storj cloud and the local `Goobox` sync folder once per minute for any changes in the content. Basic scenarios should work: initial sync, downloading and uploading modified files. More care is required for more complex scenarios: conflicts, download/upload failures, etc.
+The app polls the Storj cloud and the local `Goobox` sync folder once per minute for any changes in the content. If file is created, deleted or modified in the local sync folder, the sync will be triggered within 5 seconds.
+
+Basic sync scenarios should work: initial sync, downloading and uploading modified files. More care is required for more complex scenarios: conflicts, download/upload failures, etc.
 
 The app uses an embedded Nitrine database for storing the current sync state of the files. The DB file can be found at the following location:
 - `C:\Users\<user-name>\AppData\Local\Goobox` for Windows
