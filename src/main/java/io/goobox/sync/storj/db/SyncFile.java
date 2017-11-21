@@ -27,6 +27,7 @@ import org.dizitart.no2.objects.Id;
 import io.goobox.sync.storj.Utils;
 import io.storj.libstorj.File;
 
+@SuppressWarnings("serial")
 public class SyncFile implements Serializable {
 
     @Id

@@ -19,9 +19,7 @@ package io.goobox.sync.storj;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
@@ -31,8 +29,36 @@ import io.storj.libstorj.Storj;
 
 public class App {
 
+    private static App instance;
+
+    private Bucket gooboxBucket;
+    private TaskQueue tasks;
+    private TaskExecutor taskExecutor;
+    private FileWatcher fileWatcher;
+
     public static void main(String[] args) {
-        new App().init();
+        instance = new App();
+        instance.init();
+    }
+
+    public static App getInstance() {
+        return instance;
+    }
+
+    public Bucket getGooboxBucket() {
+        return gooboxBucket;
+    }
+
+    public TaskQueue getTaskQueue() {
+        return tasks;
+    }
+
+    public TaskExecutor getTaskExecutor() {
+        return taskExecutor;
+    }
+
+    public FileWatcher getFileWatcher() {
+        return fileWatcher;
     }
 
     private void init() {
@@ -47,16 +73,19 @@ public class App {
             System.exit(1);
         }
 
-        Bucket gooboxBucket = checkAndCreateCloudBucket();
+        gooboxBucket = checkAndCreateCloudBucket();
         if (gooboxBucket == null) {
             System.exit(1);
         }
 
-        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        tasks.add(new CheckStateTask(gooboxBucket, tasks));
+        tasks = new TaskQueue();
+        tasks.add(new CheckStateTask());
 
-        new FileWatcher().start();
-        new TaskExecutor(tasks).start();
+        taskExecutor = new TaskExecutor(tasks);
+        fileWatcher = new FileWatcher();
+
+        fileWatcher.start();
+        taskExecutor.start();
     }
 
     private boolean checkAndCreateSyncDir() {

@@ -16,34 +16,22 @@
  */
 package io.goobox.sync.storj;
 
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class TaskExecutor extends Thread {
-
-    private BlockingQueue<Runnable> tasks;
-    private volatile Runnable currentTask;
-
-    public TaskExecutor(BlockingQueue<Runnable> tasks) {
-        this.tasks = tasks;
-    }
+@SuppressWarnings("serial")
+public class TaskQueue extends LinkedBlockingQueue<Runnable> {
 
     @Override
-    public void run() {
-        while (true) {
-            try {
-                currentTask = tasks.take();
-                currentTask.run();
-                currentTask = null;
-            } catch (InterruptedException e) {
-                // nothing to do
+    public boolean add(Runnable task) {
+        if (task instanceof CheckStateTask) {
+            // don't add another check state task if the queue already contains one
+            for (Runnable t : this) {
+                if (t instanceof CheckStateTask) {
+                    return false;
+                }
             }
         }
-    }
-
-    public void interruptSleeping() {
-        if (currentTask instanceof SleepTask) {
-            ((SleepTask) currentTask).interrupt();
-        }
+        return super.add(task);
     }
 
 }
