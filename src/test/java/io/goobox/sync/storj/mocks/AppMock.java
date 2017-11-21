@@ -14,34 +14,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.goobox.sync.storj;
+package io.goobox.sync.storj.mocks;
 
-public class TaskExecutor extends Thread {
+import io.goobox.sync.storj.App;
+import io.goobox.sync.storj.FileWatcher;
+import io.goobox.sync.storj.TaskQueue;
+import io.storj.libstorj.Bucket;
+import mockit.Mock;
+import mockit.MockUp;
 
-    private TaskQueue tasks;
-    private volatile Runnable currentTask;
+public class AppMock extends MockUp<App> {
 
-    public TaskExecutor(TaskQueue tasks) {
-        this.tasks = tasks;
+    private App instance = new App();
+    private TaskQueue tasks = new TaskQueue();
+    private FileWatcher fileWatcher = new FileWatcher();
+
+    @Mock
+    public App getInstance() {
+        return instance;
     }
 
-    @Override
-    public void run() {
-        while (true) {
-            try {
-                currentTask = tasks.take();
-                currentTask.run();
-                currentTask = null;
-            } catch (InterruptedException e) {
-                // nothing to do
-            }
-        }
+    @Mock
+    public Bucket getGooboxBucket() {
+        return null;
     }
 
-    public void interruptSleeping() {
-        if (currentTask instanceof SleepTask) {
-            ((SleepTask) currentTask).interrupt();
-        }
+    @Mock
+    public TaskQueue getTaskQueue() {
+        return tasks;
+    }
+
+    @Mock
+    public FileWatcher getFileWatcher() {
+        return fileWatcher;
     }
 
 }

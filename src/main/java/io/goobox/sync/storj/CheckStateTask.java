@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
@@ -36,15 +35,21 @@ import io.storj.libstorj.Storj;
 public class CheckStateTask implements Runnable {
 
     private Bucket gooboxBucket;
-    private BlockingQueue<Runnable> tasks;
+    private TaskQueue tasks;
 
-    public CheckStateTask(Bucket gooboxBucket, BlockingQueue<Runnable> tasks) {
-        this.gooboxBucket = gooboxBucket;
-        this.tasks = tasks;
+    public CheckStateTask() {
+        this.gooboxBucket = App.getInstance().getGooboxBucket();
+        this.tasks = App.getInstance().getTaskQueue();
     }
 
     @Override
     public void run() {
+        // check if there are local file operations in progress
+        if (App.getInstance().getFileWatcher().isInProgress()) {
+            System.out.println("Skip checking for changes - local file operations in progress...");
+            return;
+        }
+
         System.out.println("Checking for changes...");
         Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.junit.After;
 import org.junit.Before;
@@ -31,8 +30,10 @@ import org.junit.runner.RunWith;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncState;
 import io.goobox.sync.storj.helpers.AssertSyncFile;
+import io.goobox.sync.storj.mocks.AppMock;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
+import io.goobox.sync.storj.mocks.FileWatcherMock;
 import io.goobox.sync.storj.mocks.FilesMock;
 import io.goobox.sync.storj.mocks.StorjMock;
 import io.storj.libstorj.DeleteFileCallback;
@@ -42,8 +43,6 @@ import mockit.integration.junit4.JMockit;
 @RunWith(JMockit.class)
 public class CheckStateTaskTest {
 
-    private LinkedBlockingQueue<Runnable> tasks;
-
     @BeforeClass
     public static void applySharedFakes() {
         new DBMock();
@@ -51,7 +50,7 @@ public class CheckStateTaskTest {
 
     @Before
     public void setup() {
-        tasks = new LinkedBlockingQueue<>();
+        new AppMock();
     }
 
     @After
@@ -64,8 +63,9 @@ public class CheckStateTaskTest {
         new StorjMock();
         new FilesMock();
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -80,8 +80,9 @@ public class CheckStateTaskTest {
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -96,8 +97,9 @@ public class CheckStateTaskTest {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock();
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(DownloadFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -112,8 +114,9 @@ public class CheckStateTaskTest {
         new StorjMock();
         new FilesMock(FileMock.FILE_1);
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(UploadFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -128,8 +131,9 @@ public class CheckStateTaskTest {
         new StorjMock(StorjMock.ENCRYPTED_FILE);
         new FilesMock();
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -142,8 +146,9 @@ public class CheckStateTaskTest {
         new StorjMock(StorjMock.ENCRYPTED_FILE);
         new FilesMock(FileMock.ENCRYPTED_FILE);
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -159,8 +164,9 @@ public class CheckStateTaskTest {
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
         Files.deleteIfExists(FileMock.FILE_1.getPath());
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(DeleteCloudFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -188,8 +194,9 @@ public class CheckStateTaskTest {
             }
         });
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(DeleteLocalFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -207,8 +214,9 @@ public class CheckStateTaskTest {
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
         storjMock.modifyFile1();
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(DownloadFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -226,8 +234,9 @@ public class CheckStateTaskTest {
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
         filesMock.modifyFile1();
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(UploadFileTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -246,7 +255,8 @@ public class CheckStateTaskTest {
         storjMock.modifyFile1();
         filesMock.modifyFile1();
 
-        new CheckStateTask(null, tasks).run();
+        TaskQueue tasks = App.getInstance().getTaskQueue();
+        new CheckStateTask().run();
 
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
@@ -262,8 +272,9 @@ public class CheckStateTaskTest {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -278,8 +289,9 @@ public class CheckStateTaskTest {
         new StorjMock(StorjMock.MODIFIED_FILE_1);
         new FilesMock(FileMock.FILE_1);
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -297,8 +309,9 @@ public class CheckStateTaskTest {
         DB.setConflict(StorjMock.FILE_1, FileMock.FILE_1.getPath());
         storjMock.modifyFile1();
 
-        new CheckStateTask(null, tasks).run();
+        new CheckStateTask().run();
 
+        TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
@@ -316,7 +329,8 @@ public class CheckStateTaskTest {
         DB.setConflict(StorjMock.FILE_1, FileMock.FILE_1.getPath());
         filesMock.modifyFile1();
 
-        new CheckStateTask(null, tasks).run();
+        TaskQueue tasks = App.getInstance().getTaskQueue();
+        new CheckStateTask().run();
 
         assertEquals(SleepTask.class, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
@@ -325,6 +339,20 @@ public class CheckStateTaskTest {
         assertEquals(1, DB.size());
         assertTrue(DB.contains(StorjMock.FILE_1));
         AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.MODIFIED_FILE_1, SyncState.CONFLICT);
+    }
+
+    @Test
+    public void fileOpsInProgressTest() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_2);
+        new FileWatcherMock(true);
+
+        new CheckStateTask().run();
+
+        TaskQueue tasks = App.getInstance().getTaskQueue();
+        assertTrue(tasks.isEmpty());
+
+        assertEquals(0, DB.size());
     }
 
 }

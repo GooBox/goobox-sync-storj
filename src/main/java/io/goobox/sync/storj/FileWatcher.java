@@ -16,53 +16,111 @@
  */
 package io.goobox.sync.storj;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-
 import java.io.IOException;
-import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
-public class FileWatcher extends Thread {
+import io.methvin.watcher.DirectoryChangeEvent;
+import io.methvin.watcher.DirectoryChangeListener;
+import io.methvin.watcher.DirectoryWatcher;
 
-    @SuppressWarnings("unchecked")
-    static <T> WatchEvent<T> cast(WatchEvent<?> event) {
-        return (WatchEvent<T>) event;
-    }
+public class FileWatcher extends Thread implements DirectoryChangeListener {
+    
+    private long lastEventTime;
+    private Map<Path, Long> copyInProgress = new HashMap<>();
 
     @Override
     public void run() {
         try {
-            WatchService watcher = FileSystems.getDefault().newWatchService();
-            Utils.getSyncDir().register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            DirectoryWatcher watcher = DirectoryWatcher.create(Utils.getSyncDir(), this);
+            watcher.watchAsync();
 
-            WatchKey key;
-            while ((key = watcher.take()) != null) {
-                for (WatchEvent<?> ev : key.pollEvents()) {
-                    WatchEvent<Path> event = cast(ev);
-                    Path path = event.context();
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (FileWatcher.this) {
+                        if (lastEventTime == 0) {
+                            // no file event occurred recently
+                            return;
+                        }
 
-                    if (!isHidden(path)) {
-//                        System.out.println("Event kind:" + event.kind() + ". Count: " + event.count()
-//                                + ". File affected: " + event.context() + ".");
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime < lastEventTime + 3000) {
+                            // last file event was less then 3 seconds ago
+                            return;
+                        }
+                        
+                        // check if file copy is still in progress
+                        Iterator<Path> i = copyInProgress.keySet().iterator();
+                        while (i.hasNext()) {
+                            Path path = i.next();
+                            try {
+                                long size = Files.size(path);
+                                if (copyInProgress.get(path) == size) {
+                                    // file size is steady - copying finished
+                                    i.remove();
+                                } else {
+                                    // update file size in map
+                                    copyInProgress.put(path, size);
+                                }
+                            } catch (IOException e) {
+                                // file does not exist anymore
+                                i.remove();
+                            }
+                        }
+                        
+                        if (copyInProgress.isEmpty()) {
+                            // last file event was more than 3 seconds ago - fire a sync check
+                            lastEventTime = 0;
+                            System.out.println("3 seconds after the last file event");
+                            App.getInstance().getTaskQueue().add(new CheckStateTask());
+                            App.getInstance().getTaskExecutor().interruptSleeping();
+                        }
                     }
                 }
-                key.reset();
-            }
+            }, 3000, 3000);
         } catch (IOException e) {
             System.out.println("File watcher error: " + e.getMessage());
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            // do nothing
         }
     }
 
-    private boolean isHidden(Path path) {
-        return Utils.getStorjConfigDir().resolve(path.toString()).toFile().isHidden();
+    @Override
+    public synchronized void onEvent(final DirectoryChangeEvent event) {
+        lastEventTime = System.currentTimeMillis();
+
+        switch (event.eventType()) {
+        case CREATE:
+        case MODIFY:
+            // TODO System.out.println(lastEventTime + " CREATE " + event.path() + "
+            // count: " + event.count());
+            try {
+                copyInProgress.put(event.path(), Files.size(event.path()));
+            } catch (IOException e) {
+                // file does not exist anymore?
+                copyInProgress.remove(event.path());
+            }
+            break;
+        case DELETE:
+            // TODO System.out.println(lastEventTime + " DELETE " + event.path() + " count:
+            // " + event.count());
+            copyInProgress.remove(event.path());
+            break;
+        case OVERFLOW:
+            // TODO System.out.println(lastEventTime + " OVERFLOW " + event.path() + "
+            // count: " + event.count());
+            break;
+        }
+    }
+
+    public synchronized boolean isInProgress() {
+        return lastEventTime != 0;
     }
 
 }

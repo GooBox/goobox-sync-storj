@@ -19,13 +19,18 @@ package io.goobox.sync.storj;
 public class SleepTask implements Runnable {
 
     @Override
-    public void run() {
+    public synchronized void run() {
         System.out.println("Sleeping for 1 minute...");
         try {
-            Thread.sleep(60000);
+            wait(60000);
         } catch (InterruptedException e) {
             // nothing to do
         }
+    }
+
+    public synchronized void interrupt() {
+        System.out.println("Sleep interrupted");
+        notify();
     }
 
 }
