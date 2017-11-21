@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
@@ -36,7 +35,7 @@ import io.storj.libstorj.Storj;
 public class CheckStateTask implements Runnable {
 
     private Bucket gooboxBucket;
-    private BlockingQueue<Runnable> tasks;
+    private TaskQueue tasks;
 
     public CheckStateTask() {
         this.gooboxBucket = App.getInstance().getGooboxBucket();

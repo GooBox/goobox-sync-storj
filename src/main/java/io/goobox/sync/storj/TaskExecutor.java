@@ -16,14 +16,12 @@
  */
 package io.goobox.sync.storj;
 
-import java.util.concurrent.BlockingQueue;
-
 public class TaskExecutor extends Thread {
 
-    private BlockingQueue<Runnable> tasks;
+    private TaskQueue tasks;
     private volatile Runnable currentTask;
 
-    public TaskExecutor(BlockingQueue<Runnable> tasks) {
+    public TaskExecutor(TaskQueue tasks) {
         this.tasks = tasks;
     }
 
