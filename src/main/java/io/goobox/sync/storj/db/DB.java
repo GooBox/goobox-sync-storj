@@ -136,9 +136,25 @@ public class DB {
         repo().update(syncFile);
     }
 
+    public synchronized static void addForDownload(File storjFile, Path localFile) throws IOException {
+        SyncFile syncFile = getOrCreate(storjFile);
+        syncFile.setCloudData(storjFile);
+        syncFile.setLocalData(localFile);
+        syncFile.setState(SyncState.FOR_DOWNLOAD);
+        repo().update(syncFile);
+    }
+
     public synchronized static void addForUpload(Path path) throws IOException {
         SyncFile syncFile = getOrCreate(path);
         syncFile.setLocalData(path);
+        syncFile.setState(SyncState.FOR_UPLOAD);
+        repo().update(syncFile);
+    }
+
+    public synchronized static void addForUpload(File storjFile, Path localFile) throws IOException {
+        SyncFile syncFile = getOrCreate(localFile);
+        syncFile.setCloudData(storjFile);
+        syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.FOR_UPLOAD);
         repo().update(syncFile);
     }

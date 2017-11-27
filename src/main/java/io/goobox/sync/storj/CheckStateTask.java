@@ -54,97 +54,7 @@ public class CheckStateTask implements Runnable {
         Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
-                List<Path> localPaths = getLocalPaths();
-                for (File file : files) {
-                    try {
-                        Path localPath = getLocalPath(file.getName(), localPaths);
-                        // process only files encrypted with the current key
-                        if (file.isDecrypted()) {
-                            if (DB.contains(file)) {
-                                if (localPath == null) {
-                                    DB.setForCloudDelete(file);
-                                    tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
-                                } else {
-                                    try {
-                                        SyncFile syncFile = DB.get(file.getName());
-                                        boolean cloudChanged = syncFile.getState() != SyncState.UPLOAD_FAILED
-                                                && syncFile.getStorjCreatedTime() != Utils.getTime(file.getCreated());
-                                        boolean localChanged = syncFile.getState() != SyncState.DOWNLOAD_FAILED
-                                                && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(localPath).toMillis();
-                                        if (cloudChanged && localChanged) {
-                                            // both local and cloud has been changed - conflict
-                                            DB.setConflict(file, localPath);
-                                        } else if (cloudChanged) {
-                                            if (syncFile.getState().isConflict()) {
-                                                // the file has been in conflict before - keep the conflict
-                                                DB.setConflict(file, localPath);
-                                            } else {
-                                                // download
-                                                DB.addForDownload(file);
-                                                tasks.add(new DownloadFileTask(gooboxBucket, file));
-                                            }
-                                        } else if (localChanged) {
-                                            if (syncFile.getState().isConflict()) {
-                                                // the file has been in conflict before - keep the conflict
-                                                DB.setConflict(file, localPath);
-                                            } else {
-                                                // upload
-                                                DB.addForUpload(localPath);
-                                                tasks.add(new UploadFileTask(gooboxBucket, localPath));
-                                            }
-                                        } else {
-                                            // no change - do nothing
-                                        }
-                                    } catch (ParseException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            } else {
-                                if (localPath == null) {
-                                    DB.addForDownload(file);
-                                    tasks.add(new DownloadFileTask(gooboxBucket, file));
-                                } else {
-                                    // check if local and cloud file are same
-                                    // TODO #29 check HMAC instead of size
-                                    if (file.getSize() == Files.size(localPath)) {
-                                        DB.setSynced(file, localPath);
-                                    } else {
-                                        DB.setConflict(file, localPath);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (localPath != null) {
-                            // Remove from the list of local file to avoid double processing
-                            localPaths.remove(localPath);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                // Process local files without cloud counterpart
-                for (Path path : localPaths) {
-                    try {
-                        if (DB.contains(path)) {
-                            SyncFile syncFile = DB.get(path.getFileName());
-                            if (syncFile.getState().isSynced()) {
-                                DB.setForLocalDelete(path);
-                                tasks.add(new DeleteLocalFileTask(path));
-                            } else if (syncFile.getState() == SyncState.UPLOAD_FAILED
-                                    && syncFile.getLocalModifiedTime() != Files.getLastModifiedTime(path).toMillis()) {
-                                DB.addForUpload(path);
-                                tasks.add(new UploadFileTask(gooboxBucket, path));
-                            }
-                        } else {
-                            DB.addForUpload(path);
-                            tasks.add(new UploadFileTask(gooboxBucket, path));
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                processFiles(files);
 
                 DB.commit();
 
@@ -162,28 +72,154 @@ public class CheckStateTask implements Runnable {
                 // Try again
                 tasks.add(CheckStateTask.this);
             }
-
-            private List<Path> getLocalPaths() {
-                List<Path> paths = new ArrayList<>();
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(Utils.getSyncDir())) {
-                    for (Path path : stream) {
-                        paths.add(path);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return paths;
-            }
-
-            private Path getLocalPath(String name, List<Path> localPaths) {
-                for (Path path : localPaths) {
-                    if (path.getFileName().toString().equals(name)) {
-                        return path;
-                    }
-                }
-                return null;
-            }
         });
+    }
+
+    private void processFiles(File[] files) {
+        List<Path> localPaths = getLocalPaths();
+        for (File file : files) {
+            try {
+                Path localPath = getLocalPath(file.getName(), localPaths);
+                // process only files encrypted with the current key
+                if (file.isDecrypted()) {
+                    try {
+                        if (DB.contains(file)) {
+                            if (localPath == null) {
+                                setForCloudDelete(file);
+                            } else {
+                                SyncFile syncFile = DB.get(file.getName());
+                                boolean cloudChanged = cloudChanged(syncFile, file);
+                                boolean localChanged = localChanged(syncFile, localPath);
+                                if (cloudChanged && localChanged) {
+                                    resolveConflict(file, localPath);
+                                } else if (cloudChanged) {
+                                    addForDownload(file);
+                                } else if (localChanged) {
+                                    addForUpload(localPath);
+                                } else {
+                                    // no change - do nothing
+                                }
+                            }
+                        } else {
+                            if (localPath == null) {
+                                addForDownload(file);
+                            } else {
+                                resolveConflict(file, localPath);
+                            }
+                        }
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (localPath != null) {
+                    // Remove from the list of local file to avoid double processing
+                    localPaths.remove(localPath);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Process local files without cloud counterpart
+        for (Path path : localPaths) {
+            try {
+                if (DB.contains(path)) {
+                    SyncFile syncFile = DB.get(path.getFileName());
+                    if (syncFile.getState().isSynced()) {
+                        setForLocalDelete(path);
+                    } else if (syncFile.getState() == SyncState.UPLOAD_FAILED
+                            && syncFile.getLocalModifiedTime() != getLocalTimestamp(path)) {
+                        addForUpload(path);
+                    }
+                } else {
+                    addForUpload(path);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private List<Path> getLocalPaths() {
+        List<Path> paths = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Utils.getSyncDir())) {
+            for (Path path : stream) {
+                paths.add(path);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return paths;
+    }
+
+    private Path getLocalPath(String name, List<Path> localPaths) {
+        for (Path path : localPaths) {
+            if (path.getFileName().toString().equals(name)) {
+                return path;
+            }
+        }
+        return null;
+    }
+
+    private long getCloudTimestamp(File file) throws ParseException {
+        return Utils.getTime(file.getCreated());
+    }
+
+    private long getLocalTimestamp(Path path) throws IOException {
+        return Files.getLastModifiedTime(path).toMillis();
+    }
+
+    private boolean cloudChanged(SyncFile syncFile, File file) throws ParseException {
+        return syncFile.getState() != SyncState.UPLOAD_FAILED
+                && syncFile.getStorjCreatedTime() != getCloudTimestamp(file);
+    }
+
+    private boolean localChanged(SyncFile syncFile, Path path) throws IOException {
+        return syncFile.getState() != SyncState.DOWNLOAD_FAILED
+                && syncFile.getLocalModifiedTime() != getLocalTimestamp(path);
+    }
+
+    private void resolveConflict(File file, Path path) throws IOException, ParseException {
+        // check if local and cloud file are same
+        // TODO #29 check HMAC instead of size
+        if (file.getSize() == Files.size(path)) {
+            DB.setSynced(file, path);
+        } else if (getCloudTimestamp(file) < getLocalTimestamp(path)) {
+            addForUpload(file, path);
+        } else {
+            addForDownload(file, path);
+        }
+    }
+
+    private void addForDownload(File file) {
+        DB.addForDownload(file);
+        tasks.add(new DownloadFileTask(gooboxBucket, file));
+    }
+
+    private void addForDownload(File file, Path path) throws IOException {
+        DB.addForDownload(file, path);
+        tasks.add(new DownloadFileTask(gooboxBucket, file));
+    }
+
+    private void addForUpload(Path path) throws IOException {
+        DB.addForUpload(path);
+        tasks.add(new UploadFileTask(gooboxBucket, path));
+    }
+
+    private void addForUpload(File file, Path path) throws IOException {
+        DB.addForUpload(file, path);
+        tasks.add(new UploadFileTask(gooboxBucket, path));
+    }
+
+    private void setForCloudDelete(File file) {
+        DB.setForCloudDelete(file);
+        tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
+    }
+
+    private void setForLocalDelete(Path path) {
+        DB.setForLocalDelete(path);
+        tasks.add(new DeleteLocalFileTask(path));
     }
 
 }
