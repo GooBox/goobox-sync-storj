@@ -47,6 +47,10 @@ public class DB {
         return ObjectFilters.eq("name", fileName);
     }
 
+    private static ObjectFilter withState(SyncState state) {
+        return ObjectFilters.eq("state", state);
+    }
+
     private static Nitrite open() {
         Path dbPath = Utils.getDataDir().resolve("sync.db");
         return Nitrite.builder()
@@ -183,12 +187,16 @@ public class DB {
         repo().update(syncFile);
     }
 
-    public static void setConflict(File storjFile, Path localFile) throws IOException {
+    public synchronized static void setConflict(File storjFile, Path localFile) throws IOException {
         SyncFile syncFile = getOrCreate(storjFile);
         syncFile.setCloudData(storjFile);
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.CONFLICT);
         repo().update(syncFile);
+    }
+
+    public synchronized static List<SyncFile> getWithState(SyncState state) {
+        return repo().find(withState(state)).toList();
     }
 
     public static void main(String[] args) {
