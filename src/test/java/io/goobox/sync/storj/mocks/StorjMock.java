@@ -42,6 +42,10 @@ public class StorjMock extends MockUp<Storj> {
             "2017-11-13T10:10:28.243Z", false, 23423313, null, null, null, null);
     public static final File MODIFIED_FILE_1 = new File("modified-file-1-id", "file-1-name", "2017-11-15T11:43:20.622Z",
             true, 12421, null, null, null, null);
+    public static final File MODIFIED_FILE_1_SAMESIZE = new File("modified-file-1-id", "file-1-name",
+            "2017-11-15T11:43:20.622Z", true, 12421, null, null, null, null);
+    public static final File MODIFIED_FILE_1_NEWER = new File("modified-file-1-id", "file-1-name",
+            "2017-11-27T10:20:30.312Z", true, 12421, null, null, null, null);
 
     private Set<File> files;
 
@@ -97,12 +101,12 @@ public class StorjMock extends MockUp<Storj> {
         }
     }
 
-    public void modifyFile1() {
-        if (files.contains(FILE_1)) {
-            files.remove(FILE_1);
-            files.add(MODIFIED_FILE_1);
+    public void modifyFile(File oldFile, File newFile) {
+        if (files.contains(oldFile)) {
+            files.remove(oldFile);
+            files.add(newFile);
         } else {
-            throw new IllegalStateException("FILE_1 not found");
+            throw new IllegalStateException(oldFile.getName() + " not found");
         }
     }
 
