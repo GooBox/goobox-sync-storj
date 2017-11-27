@@ -77,6 +77,9 @@ public class CheckStateTask implements Runnable {
 
     private void processFiles(File[] files) {
         List<Path> localPaths = getLocalPaths();
+
+        cleanDeletedFilesFromDB(files, localPaths);
+
         for (File file : files) {
             try {
                 Path localPath = getLocalPath(file.getName(), localPaths);
@@ -84,13 +87,18 @@ public class CheckStateTask implements Runnable {
                 if (file.isDecrypted()) {
                     try {
                         if (DB.contains(file)) {
+                            SyncFile syncFile = DB.get(file.getName());
                             if (localPath == null) {
-                                setForCloudDelete(file);
+                                if (syncFile.getState() == SyncState.FOR_DOWNLOAD
+                                        && syncFile.getLocalModifiedTime() == 0) {
+                                    addForDownload(file);
+                                } else {
+                                    setForCloudDelete(file);
+                                }
                             } else {
-                                SyncFile syncFile = DB.get(file.getName());
                                 boolean cloudChanged = cloudChanged(syncFile, file);
                                 boolean localChanged = localChanged(syncFile, localPath);
-                                if (cloudChanged && localChanged) {
+                                if (cloudChanged && localChanged || syncFile.getState() == SyncState.FOR_DOWNLOAD) {
                                     resolveConflict(file, localPath);
                                 } else if (cloudChanged) {
                                     addForDownload(file);
@@ -128,6 +136,15 @@ public class CheckStateTask implements Runnable {
                     SyncFile syncFile = DB.get(path.getFileName());
                     if (syncFile.getState().isSynced()) {
                         setForLocalDelete(path);
+                    } else if (syncFile.getState() == SyncState.FOR_UPLOAD) {
+                        if (syncFile.getStorjCreatedTime() == 0) {
+                            addForUpload(path);
+                        } else {
+                            setForLocalDelete(path);
+                        }
+                    } else if (syncFile.getState() == SyncState.FOR_LOCAL_DELETE
+                            || syncFile.getState() == SyncState.FOR_DOWNLOAD) {
+                        setForLocalDelete(path);
                     } else if (syncFile.getState() == SyncState.UPLOAD_FAILED
                             && syncFile.getLocalModifiedTime() != getLocalTimestamp(path)) {
                         addForUpload(path);
@@ -139,6 +156,15 @@ public class CheckStateTask implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    private File getStorjFile(String name, File[] files) {
+        for (File file : files) {
+            if (file.getName().toString().equals(name)) {
+                return file;
+            }
+        }
+        return null;
     }
 
     private List<Path> getLocalPaths() {
@@ -220,6 +246,25 @@ public class CheckStateTask implements Runnable {
     private void setForLocalDelete(Path path) {
         DB.setForLocalDelete(path);
         tasks.add(new DeleteLocalFileTask(path));
+    }
+
+    private void cleanDeletedFilesFromDB(File[] files, List<Path> localPaths) {
+        cleanDeletedFilesFromDB(SyncState.FOR_DOWNLOAD, files, localPaths);
+        cleanDeletedFilesFromDB(SyncState.FOR_UPLOAD, files, localPaths);
+        cleanDeletedFilesFromDB(SyncState.FOR_CLOUD_DELETE, files, localPaths);
+        cleanDeletedFilesFromDB(SyncState.FOR_LOCAL_DELETE, files, localPaths);
+    }
+
+    private void cleanDeletedFilesFromDB(SyncState state, File[] files, List<Path> localPaths) {
+        List<SyncFile> syncFiles = DB.getWithState(state);
+        for (SyncFile syncFile : syncFiles) {
+            String fileName = syncFile.getName();
+            File storjFile = getStorjFile(fileName, files);
+            Path localPath = getLocalPath(fileName, localPaths);
+            if (storjFile == null && localPath == null) {
+                DB.remove(fileName);
+            }
+        }
     }
 
 }

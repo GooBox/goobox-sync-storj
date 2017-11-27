@@ -135,17 +135,7 @@ public class CheckStateTaskTest {
         new FilesMock(FileMock.FILE_1);
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
-
-        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new DeleteFileCallback() {
-            @Override
-            public void onFileDeleted() {
-            }
-
-            @Override
-            public void onError(String message) {
-                throw new IllegalStateException(message);
-            }
-        });
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
 
         new CheckStateTask().run();
 
@@ -283,6 +273,293 @@ public class CheckStateTaskTest {
         new CheckStateTask().run();
 
         AssertState.assertAllEmpty();
+    }
+
+    @Test
+    public void resyncForDownloadNoLocal() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock();
+
+        DB.addForDownload(StorjMock.FILE_1);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForDownload(StorjMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForDownloadBothModifiedSameSize() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1_SAMESIZE);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1_SAMESIZE);
+
+        new CheckStateTask().run();
+
+        AssertState.assertSynced(StorjMock.MODIFIED_FILE_1_SAMESIZE, FileMock.MODIFIED_FILE_1_SAMESIZE);
+    }
+
+    @Test
+    public void resyncForDownloadBothModifiedSameTime() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1_NEWER);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1_NEWER);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForDownload(StorjMock.MODIFIED_FILE_1_NEWER, FileMock.MODIFIED_FILE_1_NEWER);
+    }
+
+    @Test
+    public void resyncForDownloadBothModifiedCloudNewer() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1_NEWER);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForDownload(StorjMock.MODIFIED_FILE_1_NEWER, FileMock.MODIFIED_FILE_1);
+    }
+
+    @Test
+    public void resyncForDownloadBothModifiedLocalNewer() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1_NEWER);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForUpload(StorjMock.MODIFIED_FILE_1, FileMock.MODIFIED_FILE_1_NEWER);
+    }
+
+    @Test
+    public void resyncForDownloadLocalDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertForCloudDelete(StorjMock.FILE_1, FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForDownloadCloudDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+
+        new CheckStateTask().run();
+
+        AssertState.assertForLocalDelete(StorjMock.FILE_1, FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForDownloadBothDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForDownload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertSleepEmptyDB();
+    }
+
+    @Test
+    public void resyncForUploadNoCloud() throws Exception {
+        new StorjMock();
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertForUpload(FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForUploadBothModifiedSameSize() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1_SAMESIZE);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1_SAMESIZE);
+
+        new CheckStateTask().run();
+
+        AssertState.assertSynced(StorjMock.MODIFIED_FILE_1_SAMESIZE, FileMock.MODIFIED_FILE_1_SAMESIZE);
+    }
+
+    @Test
+    public void resyncForUploadBothModifiedSameTime() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1_NEWER);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1_NEWER);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForDownload(StorjMock.MODIFIED_FILE_1_NEWER, FileMock.MODIFIED_FILE_1_NEWER);
+    }
+
+    @Test
+    public void resyncForUploadBothModifiedCloudNewer() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1_NEWER);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForDownload(StorjMock.MODIFIED_FILE_1_NEWER, FileMock.MODIFIED_FILE_1);
+    }
+
+    @Test
+    public void resyncForUploadBothModifiedLocalNewer() throws Exception {
+        StorjMock storjMock = new StorjMock(StorjMock.FILE_1);
+        FilesMock filesMock = new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        storjMock.modifyFile(StorjMock.FILE_1, StorjMock.MODIFIED_FILE_1);
+        filesMock.modifyFile(FileMock.FILE_1, FileMock.MODIFIED_FILE_1_NEWER);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForUpload(StorjMock.MODIFIED_FILE_1, FileMock.MODIFIED_FILE_1_NEWER);
+    }
+
+    @Test
+    public void resyncForUploadLocalDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertForCloudDelete(StorjMock.FILE_1, FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForUploadCloudDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+
+        new CheckStateTask().run();
+
+        AssertState.assertForLocalDelete(StorjMock.FILE_1, FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForUploadBothDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertSleepEmptyDB();
+    }
+
+    @Test
+    public void resyncForCloudDelete() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+        DB.setForCloudDelete(StorjMock.FILE_1);
+
+        new CheckStateTask().run();
+
+        AssertState.assertForCloudDelete(StorjMock.FILE_1, FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForCloudDeleteBothDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+        DB.setForCloudDelete(StorjMock.FILE_1);
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+
+        new CheckStateTask().run();
+
+        AssertState.assertSleepEmptyDB();
+    }
+
+    @Test
+    public void resyncForLocalDelete() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+        DB.setForLocalDelete(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertForLocalDelete(StorjMock.FILE_1, FileMock.FILE_1);
+    }
+
+    @Test
+    public void resyncForLocalDeleteBothDeleted() throws Exception {
+        new StorjMock(StorjMock.FILE_1);
+        new FilesMock(FileMock.FILE_1);
+
+        DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
+        Storj.getInstance().deleteFile(null, StorjMock.FILE_1, new TestDeleteFileCallback());
+        DB.setForLocalDelete(FileMock.FILE_1.getPath());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+
+        new CheckStateTask().run();
+
+        AssertState.assertSleepEmptyDB();
+    }
+
+    private class TestDeleteFileCallback implements DeleteFileCallback {
+
+        @Override
+        public void onFileDeleted() {
+        }
+
+        @Override
+        public void onError(String message) {
+            throw new IllegalStateException(message);
+        }
+
     }
 
 }
