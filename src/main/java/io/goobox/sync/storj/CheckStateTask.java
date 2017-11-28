@@ -88,22 +88,28 @@ public class CheckStateTask implements Runnable {
                     try {
                         if (DB.contains(file)) {
                             SyncFile syncFile = DB.get(file.getName());
+                            boolean cloudChanged = cloudChanged(syncFile, file);
                             if (localPath == null) {
-                                if (syncFile.getState() == SyncState.FOR_DOWNLOAD
+                                if (cloudChanged || syncFile.getState() == SyncState.FOR_DOWNLOAD
                                         && syncFile.getLocalModifiedTime() == 0) {
                                     addForDownload(file);
+                                } else if (syncFile.getState() == SyncState.DOWNLOAD_FAILED) {
+                                    if (syncFile.getLocalModifiedTime() == 0) {
+                                        DB.setDownloadFailed(file, localPath);
+                                    } else {
+                                        addForDownload(file);
+                                    }
                                 } else {
                                     setForCloudDelete(file);
                                 }
                             } else {
-                                boolean cloudChanged = cloudChanged(syncFile, file);
                                 boolean localChanged = localChanged(syncFile, localPath);
                                 if (cloudChanged && localChanged || syncFile.getState() == SyncState.FOR_DOWNLOAD) {
                                     resolveConflict(file, localPath);
                                 } else if (cloudChanged) {
-                                    addForDownload(file);
+                                    addForDownload(file, localPath);
                                 } else if (localChanged) {
-                                    addForUpload(localPath);
+                                    addForUpload(file, localPath);
                                 } else {
                                     // no change - do nothing
                                 }
@@ -134,20 +140,13 @@ public class CheckStateTask implements Runnable {
             try {
                 if (DB.contains(path)) {
                     SyncFile syncFile = DB.get(path.getFileName());
-                    if (syncFile.getState().isSynced()) {
-                        setForLocalDelete(path);
-                    } else if (syncFile.getState() == SyncState.FOR_UPLOAD) {
-                        if (syncFile.getStorjCreatedTime() == 0) {
-                            addForUpload(path);
-                        } else {
-                            setForLocalDelete(path);
-                        }
-                    } else if (syncFile.getState() == SyncState.FOR_LOCAL_DELETE
-                            || syncFile.getState() == SyncState.FOR_DOWNLOAD) {
-                        setForLocalDelete(path);
-                    } else if (syncFile.getState() == SyncState.UPLOAD_FAILED
-                            && syncFile.getLocalModifiedTime() != getLocalTimestamp(path)) {
+                    if (localChanged(syncFile, path)
+                            || syncFile.getState() == SyncState.FOR_UPLOAD && syncFile.getStorjCreatedTime() == 0) {
                         addForUpload(path);
+                    } else if (syncFile.getState() == SyncState.UPLOAD_FAILED && syncFile.getStorjCreatedTime() == 0) {
+                        DB.setUploadFailed(path);
+                    } else {
+                        setForLocalDelete(path);
                     }
                 } else {
                     addForUpload(path);
@@ -197,13 +196,11 @@ public class CheckStateTask implements Runnable {
     }
 
     private boolean cloudChanged(SyncFile syncFile, File file) throws ParseException {
-        return syncFile.getState() != SyncState.UPLOAD_FAILED
-                && syncFile.getStorjCreatedTime() != getCloudTimestamp(file);
+        return syncFile.getStorjCreatedTime() != getCloudTimestamp(file);
     }
 
     private boolean localChanged(SyncFile syncFile, Path path) throws IOException {
-        return syncFile.getState() != SyncState.DOWNLOAD_FAILED
-                && syncFile.getLocalModifiedTime() != getLocalTimestamp(path);
+        return syncFile.getLocalModifiedTime() != getLocalTimestamp(path);
     }
 
     private void resolveConflict(File file, Path path) throws IOException, ParseException {
@@ -243,21 +240,13 @@ public class CheckStateTask implements Runnable {
         tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
     }
 
-    private void setForLocalDelete(Path path) {
+    private void setForLocalDelete(Path path) throws IOException {
         DB.setForLocalDelete(path);
         tasks.add(new DeleteLocalFileTask(path));
     }
 
     private void cleanDeletedFilesFromDB(File[] files, List<Path> localPaths) {
-        cleanDeletedFilesFromDB(SyncState.FOR_DOWNLOAD, files, localPaths);
-        cleanDeletedFilesFromDB(SyncState.FOR_UPLOAD, files, localPaths);
-        cleanDeletedFilesFromDB(SyncState.FOR_CLOUD_DELETE, files, localPaths);
-        cleanDeletedFilesFromDB(SyncState.FOR_LOCAL_DELETE, files, localPaths);
-    }
-
-    private void cleanDeletedFilesFromDB(SyncState state, File[] files, List<Path> localPaths) {
-        List<SyncFile> syncFiles = DB.getWithState(state);
-        for (SyncFile syncFile : syncFiles) {
+        for (SyncFile syncFile : DB.all()) {
             String fileName = syncFile.getName();
             File storjFile = getStorjFile(fileName, files);
             Path localPath = getLocalPath(fileName, localPaths);

@@ -81,6 +81,26 @@ public class AssertState {
         assertDB(storjFile, localFile, SyncState.FOR_LOCAL_DELETE);
     }
 
+    public static void assertForDownloadFailed(File storjFile) throws ParseException {
+        assertTaskQueue(SleepTask.class);
+        assertDB(storjFile, SyncState.DOWNLOAD_FAILED);
+    }
+
+    public static void assertForDownloadFailed(File storjFile, FileMock localFile) throws ParseException {
+        assertTaskQueue(SleepTask.class);
+        assertDB(storjFile, localFile, SyncState.DOWNLOAD_FAILED);
+    }
+
+    public static void assertForUploadFailed(FileMock localFile) throws ParseException {
+        assertTaskQueue(SleepTask.class);
+        assertDB(localFile, SyncState.UPLOAD_FAILED);
+    }
+
+    public static void assertForUploadFailed(File storjFile, FileMock localFile) throws ParseException {
+        assertTaskQueue(SleepTask.class);
+        assertDB(storjFile, localFile, SyncState.UPLOAD_FAILED);
+    }
+
     private static void assertEmptyTaskQueue() {
         TaskQueue tasks = App.getInstance().getTaskQueue();
         assertTrue(tasks.isEmpty());

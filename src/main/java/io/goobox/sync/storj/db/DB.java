@@ -17,6 +17,7 @@
 package io.goobox.sync.storj.db;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -47,10 +48,6 @@ public class DB {
         return ObjectFilters.eq("name", fileName);
     }
 
-    private static ObjectFilter withState(SyncState state) {
-        return ObjectFilters.eq("state", state);
-    }
-
     private static Nitrite open() {
         Path dbPath = Utils.getDataDir().resolve("sync.db");
         return Nitrite.builder()
@@ -65,6 +62,10 @@ public class DB {
 
     public synchronized static void commit() {
         db().commit();
+    }
+
+    public synchronized static List<SyncFile> all() {
+        return repo().find().toList();
     }
 
     public synchronized static boolean contains(File file) {
@@ -134,6 +135,7 @@ public class DB {
     }
 
     public synchronized static void addForDownload(File file) {
+        remove(file);
         SyncFile syncFile = getOrCreate(file);
         syncFile.setCloudData(file);
         syncFile.setState(SyncState.FOR_DOWNLOAD);
@@ -149,6 +151,7 @@ public class DB {
     }
 
     public synchronized static void addForUpload(Path path) throws IOException {
+        remove(path);
         SyncFile syncFile = getOrCreate(path);
         syncFile.setLocalData(path);
         syncFile.setState(SyncState.FOR_UPLOAD);
@@ -163,26 +166,35 @@ public class DB {
         repo().update(syncFile);
     }
 
-    public synchronized static void setDownloadFailed(File file) {
-        SyncFile syncFile = get(file);
+    public synchronized static void setDownloadFailed(File storjFile, Path localFile) throws IOException {
+        SyncFile syncFile = get(storjFile);
+        syncFile.setCloudData(storjFile);
+        if (Files.exists(localFile)) {
+            syncFile.setLocalData(localFile);
+        }
         syncFile.setState(SyncState.DOWNLOAD_FAILED);
         repo().update(syncFile);
     }
 
-    public synchronized static void setUploadFailed(Path path) {
+    public synchronized static void setUploadFailed(Path path) throws IOException {
         SyncFile syncFile = get(path);
+        if (Files.exists(path)) {
+            syncFile.setLocalData(path);
+        }
         syncFile.setState(SyncState.UPLOAD_FAILED);
         repo().update(syncFile);
     }
 
-    public synchronized static void setForLocalDelete(Path path) {
+    public synchronized static void setForLocalDelete(Path path) throws IOException {
         SyncFile syncFile = get(path);
+        syncFile.setLocalData(path);
         syncFile.setState(SyncState.FOR_LOCAL_DELETE);
         repo().update(syncFile);
     }
 
     public synchronized static void setForCloudDelete(File file) {
         SyncFile syncFile = get(file);
+        syncFile.setCloudData(file);
         syncFile.setState(SyncState.FOR_CLOUD_DELETE);
         repo().update(syncFile);
     }
@@ -193,10 +205,6 @@ public class DB {
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.CONFLICT);
         repo().update(syncFile);
-    }
-
-    public synchronized static List<SyncFile> getWithState(SyncState state) {
-        return repo().find(withState(state)).toList();
     }
 
     public static void main(String[] args) {

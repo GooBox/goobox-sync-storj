@@ -17,6 +17,7 @@
 package io.goobox.sync.storj;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import io.goobox.sync.storj.db.DB;
@@ -60,9 +61,14 @@ public class DownloadFileTask implements Runnable {
 
             @Override
             public void onError(File file, String message) {
-                DB.setDownloadFailed(file);
-                DB.commit();
-                System.out.println("  " + message);
+                Path localPath = Utils.getSyncDir().resolve(file.getName());
+                try {
+                    DB.setDownloadFailed(file, localPath);
+                    DB.commit();
+                    System.out.println("  " + message);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }

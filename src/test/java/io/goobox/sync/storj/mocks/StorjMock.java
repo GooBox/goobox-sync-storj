@@ -110,4 +110,8 @@ public class StorjMock extends MockUp<Storj> {
         }
     }
 
+    public void addFile(File file) {
+        files.add(file);
+    }
+
 }
