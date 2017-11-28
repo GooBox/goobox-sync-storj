@@ -112,4 +112,8 @@ public class FilesMock extends MockUp<Files> {
         }
     }
 
+    public void addFile(FileMock file) {
+        files.add(file);
+    }
+
 }

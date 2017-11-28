@@ -91,9 +91,13 @@ public class UploadFileTask implements Runnable {
 
             @Override
             public void onError(String filePath, String message) {
-                DB.setUploadFailed(path);
-                DB.commit();
-                System.out.println("  " + message);
+                try {
+                    DB.setUploadFailed(path);
+                    DB.commit();
+                    System.out.println("  " + message);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
