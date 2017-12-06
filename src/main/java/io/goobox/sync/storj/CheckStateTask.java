@@ -21,7 +21,9 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 import io.goobox.sync.storj.db.DB;
@@ -87,7 +89,7 @@ public class CheckStateTask implements Runnable {
                 if (file.isDecrypted()) {
                     try {
                         if (DB.contains(file)) {
-                            SyncFile syncFile = DB.get(file.getName());
+                            SyncFile syncFile = DB.get(file);
                             boolean cloudChanged = cloudChanged(syncFile, file);
                             if (localPath == null) {
                                 if (cloudChanged || syncFile.getState() == SyncState.FOR_DOWNLOAD
@@ -116,7 +118,11 @@ public class CheckStateTask implements Runnable {
                             }
                         } else {
                             if (localPath == null) {
-                                addForDownload(file);
+                                if (file.isDirectory()) {
+                                    addForLocalCreateDir(file);
+                                } else {
+                                    addForDownload(file);
+                                }
                             } else {
                                 resolveConflict(file, localPath);
                             }
@@ -139,7 +145,7 @@ public class CheckStateTask implements Runnable {
         for (Path path : localPaths) {
             try {
                 if (DB.contains(path)) {
-                    SyncFile syncFile = DB.get(path.getFileName());
+                    SyncFile syncFile = DB.get(path);
                     if (localChanged(syncFile, path)
                             || syncFile.getState() == SyncState.FOR_UPLOAD && syncFile.getStorjCreatedTime() == 0) {
                         addForUpload(path);
@@ -149,7 +155,11 @@ public class CheckStateTask implements Runnable {
                         setForLocalDelete(path);
                     }
                 } else {
-                    addForUpload(path);
+                    if (Files.isDirectory(path)) {
+                        addForCloudCreateDir(path);
+                    } else {
+                        addForUpload(path);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -159,7 +169,7 @@ public class CheckStateTask implements Runnable {
 
     private File getStorjFile(String name, File[] files) {
         for (File file : files) {
-            if (file.getName().toString().equals(name)) {
+            if (DB.getName(file).toString().equals(name)) {
                 return file;
             }
         }
@@ -167,20 +177,30 @@ public class CheckStateTask implements Runnable {
     }
 
     private List<Path> getLocalPaths() {
+        Deque<Path> stack = new ArrayDeque<Path>();
         List<Path> paths = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Utils.getSyncDir())) {
-            for (Path path : stream) {
-                paths.add(path);
+
+        stack.push(Utils.getSyncDir());
+
+        while (!stack.isEmpty()) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(stack.pop())) {
+                for (Path path : stream) {
+                    if (Files.isDirectory(path)) {
+                        stack.push(path);
+                    }
+                    paths.add(path);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
         return paths;
     }
 
     private Path getLocalPath(String name, List<Path> localPaths) {
         for (Path path : localPaths) {
-            if (path.getFileName().toString().equals(name)) {
+            if (path.endsWith(name)) {
                 return path;
             }
         }
@@ -196,17 +216,19 @@ public class CheckStateTask implements Runnable {
     }
 
     private boolean cloudChanged(SyncFile syncFile, File file) throws ParseException {
-        return syncFile.getStorjCreatedTime() != getCloudTimestamp(file);
+        return !file.isDirectory() && syncFile.getStorjCreatedTime() != getCloudTimestamp(file);
     }
 
     private boolean localChanged(SyncFile syncFile, Path path) throws IOException {
-        return syncFile.getLocalModifiedTime() != getLocalTimestamp(path);
+        return !Files.isDirectory(path) && syncFile.getLocalModifiedTime() != getLocalTimestamp(path);
     }
 
     private void resolveConflict(File file, Path path) throws IOException, ParseException {
         // check if local and cloud file are same
         // TODO #29 check HMAC instead of size
-        if (file.getSize() == Files.size(path)) {
+        if (file.isDirectory() && Files.isDirectory(path)) {
+            DB.setSynced(file, path);
+        } else if (file.getSize() == Files.size(path)) {
             DB.setSynced(file, path);
         } else if (getCloudTimestamp(file) < getLocalTimestamp(path)) {
             addForUpload(file, path);
@@ -243,6 +265,16 @@ public class CheckStateTask implements Runnable {
     private void setForLocalDelete(Path path) throws IOException {
         DB.setForLocalDelete(path);
         tasks.add(new DeleteLocalFileTask(path));
+    }
+
+    private void addForLocalCreateDir(File file) throws IOException {
+        DB.addForLocalCreateDir(file);
+        tasks.add(new CreateLocalDirTask(file));
+    }
+
+    private void addForCloudCreateDir(Path path) throws IOException {
+        DB.addForCloudCreateDir(path);
+        tasks.add(new CreateCloudDirTask(gooboxBucket, path));
     }
 
     private void cleanDeletedFilesFromDB(File[] files, List<Path> localPaths) {

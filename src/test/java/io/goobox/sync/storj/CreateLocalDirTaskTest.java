@@ -16,10 +16,11 @@
  */
 package io.goobox.sync.storj;
 
+import static org.junit.Assert.assertTrue;
+
 import java.nio.file.Files;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +36,7 @@ import io.goobox.sync.storj.mocks.StorjMock;
 import mockit.integration.junit4.JMockit;
 
 @RunWith(JMockit.class)
-public class DownloadFileTaskTest {
+public class CreateLocalDirTaskTest {
 
     @BeforeClass
     public static void applySharedFakes() {
@@ -52,52 +53,45 @@ public class DownloadFileTaskTest {
     }
 
     @Test
-    public void successfulDownload() throws Exception {
-        new StorjMock(new FilesMock(), StorjMock.FILE_1);
-
-        DB.addForDownload(StorjMock.FILE_1);
-
-        new DownloadFileTask(null, StorjMock.FILE_1).run();
-
-        Assert.assertTrue(Files.exists(FileMock.FILE_1.getPath()));
-        AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
-    }
-
-    @Test
-    public void erroneousDownload() throws Exception {
-        new StorjMock(StorjMock.FILE_2);
-
-        DB.addForDownload(StorjMock.FILE_2);
-
-        new DownloadFileTask(null, StorjMock.FILE_2).run();
-
-        AssertState.assertDB(StorjMock.FILE_2, SyncState.DOWNLOAD_FAILED);
-    }
-
-    @Test
-    public void subFileDownload() throws Exception {
-        new StorjMock(new FilesMock(), StorjMock.SUB_FILE);
+    public void createLocalDir() throws Exception {
+        new StorjMock(StorjMock.DIR);
         new FilesMock();
 
-        DB.addForDownload(StorjMock.SUB_FILE);
+        DB.addForLocalCreateDir(StorjMock.DIR);
 
-        new DownloadFileTask(null, StorjMock.SUB_FILE).run();
+        new CreateLocalDirTask(StorjMock.DIR).run();
 
-        Assert.assertTrue(Files.exists(FileMock.SUB_FILE.getPath()));
-        AssertState.assertDB(StorjMock.SUB_FILE, FileMock.SUB_FILE, SyncState.SYNCED);
+        assertTrue(Files.exists(FileMock.DIR.getPath()));
+        assertTrue(Files.isDirectory(FileMock.DIR.getPath()));
+        AssertState.assertDB(StorjMock.DIR, FileMock.DIR, SyncState.SYNCED);
     }
 
     @Test
-    public void subSubFileDownload() throws Exception {
-        new StorjMock(new FilesMock(), StorjMock.SUB_SUB_FILE);
+    public void createLocalDirAlreadyExists() throws Exception {
+        new StorjMock(StorjMock.DIR);
+        new FilesMock(FileMock.DIR);
+
+        DB.addForLocalCreateDir(StorjMock.DIR);
+
+        new CreateLocalDirTask(StorjMock.DIR).run();
+
+        assertTrue(Files.exists(FileMock.DIR.getPath()));
+        assertTrue(Files.isDirectory(FileMock.DIR.getPath()));
+        AssertState.assertDB(StorjMock.DIR, FileMock.DIR, SyncState.SYNCED);
+    }
+
+    @Test
+    public void createLocalSubDir() throws Exception {
+        new StorjMock(StorjMock.SUB_DIR);
         new FilesMock();
 
-        DB.addForDownload(StorjMock.SUB_SUB_FILE);
+        DB.addForLocalCreateDir(StorjMock.SUB_DIR);
 
-        new DownloadFileTask(null, StorjMock.SUB_SUB_FILE).run();
+        new CreateLocalDirTask(StorjMock.SUB_DIR).run();
 
-        Assert.assertTrue(Files.exists(FileMock.SUB_SUB_FILE.getPath()));
-        AssertState.assertDB(StorjMock.SUB_SUB_FILE, FileMock.SUB_SUB_FILE, SyncState.SYNCED);
+        assertTrue(Files.exists(FileMock.SUB_DIR.getPath()));
+        assertTrue(Files.isDirectory(FileMock.SUB_DIR.getPath()));
+        AssertState.assertDB(StorjMock.SUB_DIR, FileMock.SUB_DIR, SyncState.SYNCED);
     }
 
 }

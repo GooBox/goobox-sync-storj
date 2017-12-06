@@ -34,7 +34,7 @@ public class DeleteCloudFileTask implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Deleting cloud file " + file.getName() + "... ");
+        System.out.printf("Deleting cloud %s %s...\n", file.isDirectory() ? "directory" : "file", file.getName());
 
         Storj.getInstance().deleteFile(bucket, file, new DeleteFileCallback() {
             @Override

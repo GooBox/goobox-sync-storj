@@ -16,9 +16,6 @@
  */
 package io.goobox.sync.storj;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -27,7 +24,7 @@ import org.junit.runner.RunWith;
 
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncState;
-import io.goobox.sync.storj.helpers.AssertSyncFile;
+import io.goobox.sync.storj.helpers.AssertState;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
 import io.goobox.sync.storj.mocks.FilesMock;
@@ -52,7 +49,7 @@ public class UploadFileTaskTest {
     }
 
     @Test
-    public void successfulUploadTest() throws Exception {
+    public void successfulUpload() throws Exception {
         new StorjMock();
         new FilesMock(FileMock.FILE_1);
 
@@ -60,13 +57,11 @@ public class UploadFileTaskTest {
 
         new UploadFileTask(null, FileMock.FILE_1.getPath()).run();
 
-        assertEquals(1, DB.size());
-        assertTrue(DB.contains(FileMock.FILE_1.getPath()));
-        AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
+        AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
 
     @Test
-    public void successfulUploadOverwriteTest() throws Exception {
+    public void successfulUploadOverwrite() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
@@ -74,13 +69,11 @@ public class UploadFileTaskTest {
 
         new UploadFileTask(null, FileMock.FILE_1.getPath()).run();
 
-        assertEquals(1, DB.size());
-        assertTrue(DB.contains(FileMock.FILE_1.getPath()));
-        AssertSyncFile.assertWith(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
+        AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
 
     @Test
-    public void erroneousUploadTest() throws Exception {
+    public void erroneousUpload() throws Exception {
         new StorjMock();
         new FilesMock(FileMock.FILE_2);
 
@@ -88,9 +81,31 @@ public class UploadFileTaskTest {
 
         new UploadFileTask(null, FileMock.FILE_2.getPath()).run();
 
-        assertEquals(1, DB.size());
-        assertTrue(DB.contains(FileMock.FILE_2.getPath()));
-        AssertSyncFile.assertWith(FileMock.FILE_2, SyncState.UPLOAD_FAILED);
+        AssertState.assertDB(FileMock.FILE_2, SyncState.UPLOAD_FAILED);
+    }
+
+    @Test
+    public void subFileUpload() throws Exception {
+        new StorjMock();
+        new FilesMock(FileMock.SUB_FILE);
+
+        DB.addForUpload(FileMock.SUB_FILE.getPath());
+
+        new UploadFileTask(null, FileMock.SUB_FILE.getPath()).run();
+
+        AssertState.assertDB(StorjMock.SUB_FILE, FileMock.SUB_FILE, SyncState.SYNCED);
+    }
+
+    @Test
+    public void subSubFileUpload() throws Exception {
+        new StorjMock();
+        new FilesMock(FileMock.SUB_SUB_FILE);
+
+        DB.addForUpload(FileMock.SUB_SUB_FILE.getPath());
+
+        new UploadFileTask(null, FileMock.SUB_SUB_FILE.getPath()).run();
+
+        AssertState.assertDB(StorjMock.SUB_SUB_FILE, FileMock.SUB_SUB_FILE, SyncState.SYNCED);
     }
 
 }

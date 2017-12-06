@@ -16,6 +16,7 @@
  */
 package io.goobox.sync.storj.mocks;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,11 +47,25 @@ public class StorjMock extends MockUp<Storj> {
             "2017-11-15T11:43:20.622Z", true, 12421, null, null, null, null);
     public static final File MODIFIED_FILE_1_NEWER = new File("modified-file-1-id", "file-1-name",
             "2017-11-27T10:20:30.312Z", true, 12421, null, null, null, null);
+    public static final File DIR = new File("dir-id", "dir-name/", "2017-12-04T07:11:56.825Z", true,
+            1, null, null, null, null);
+    public static final File SUB_DIR = new File("sub-dir-id", "dir-name/sub-dir-name/", "2017-12-04T11:46:34.712Z",
+            true, 1, null, null, null, null);
+    public static final File SUB_FILE = new File("sub-file-id", "dir-name/sub-file-name", "2017-12-04T14:37:30.934Z",
+            true, 2455, null, null, null, null);
+    public static final File SUB_SUB_FILE = new File("sub-sub-file-id", "dir-name/sub-dir-name/sub-sub-file-name",
+            "2017-12-04T14:38:35.192Z", true, 23467, null, null, null, null);
 
     private Set<File> files;
+    private FilesMock filesMock;
 
     public StorjMock(File... files) {
         this.files = new HashSet<>(Arrays.asList(files));
+    }
+
+    public StorjMock(FilesMock filesMock, File... files) {
+        this(files);
+        this.filesMock = filesMock;
     }
 
     @Mock
@@ -71,33 +86,53 @@ public class StorjMock extends MockUp<Storj> {
             if (f.equals(file)) {
                 i.remove();
                 callback.onFileDeleted();
-            } else {
-                callback.onError("file not found");
+                return;
             }
-            return;
         }
+        callback.onError("file not found");
     }
 
     @Mock
     public void downloadFile(Bucket bucket, File file, DownloadFileCallback callback) throws KeysNotFoundException {
         if (FILE_1.equals(file)) {
+            filesMock.addFile(FileMock.FILE_1);
             callback.onComplete(file, FileMock.FILE_1.getPath().toString());
+        } else if (SUB_FILE.equals(file)) {
+            filesMock.addFile(FileMock.SUB_FILE);
+            callback.onComplete(file, FileMock.SUB_FILE.getPath().toString());
+        } else if (SUB_SUB_FILE.equals(file)) {
+            filesMock.addFile(FileMock.SUB_SUB_FILE);
+            callback.onComplete(file, FileMock.SUB_SUB_FILE.getPath().toString());
         } else {
             callback.onError(file, "error downloading");
         }
     }
 
     @Mock
-    public void uploadFile(Bucket bucket, String filePath, UploadFileCallback callback) throws KeysNotFoundException {
-        if (FileMock.FILE_1.getPath().toString().equals(filePath)) {
+    public void uploadFile(Bucket bucket, String fileName, Path localPath, UploadFileCallback callback)
+            throws KeysNotFoundException {
+        String path = localPath.toAbsolutePath().toString();
+        if (FileMock.FILE_1.getPath().equals(localPath)) {
             if (files.contains(FILE_1)) {
-                callback.onError(filePath, "File already exists");
+                callback.onError(path, "File already exists");
             } else {
                 files.add(FILE_1);
-                callback.onComplete(filePath, FILE_1.getId());
+                callback.onComplete(path, FILE_1.getId());
             }
+        } else if (DIR.getName().equals(fileName)) {
+            files.add(DIR);
+            callback.onComplete(path, DIR.getId());
+        } else if (SUB_DIR.getName().equals(fileName)) {
+            files.add(SUB_DIR);
+            callback.onComplete(path, SUB_DIR.getId());
+        } else if (SUB_FILE.getName().equals(fileName)) {
+            files.add(SUB_FILE);
+            callback.onComplete(path, SUB_FILE.getId());
+        } else if (SUB_SUB_FILE.getName().equals(fileName)) {
+            files.add(SUB_SUB_FILE);
+            callback.onComplete(path, SUB_SUB_FILE.getId());
         } else {
-            callback.onError(filePath, "error uploading");
+            callback.onError(path, "error uploading");
         }
     }
 

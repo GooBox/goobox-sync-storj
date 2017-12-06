@@ -32,10 +32,12 @@ public class UploadFileTask implements Runnable {
 
     private Bucket bucket;
     private Path path;
+    private String relPath;
 
     public UploadFileTask(Bucket bucket, Path path) {
         this.bucket = bucket;
         this.path = path;
+        this.relPath = Utils.getSyncDir().relativize(path).toString();
     }
 
     @Override
@@ -47,9 +49,9 @@ public class UploadFileTask implements Runnable {
             return;
         }
 
-        System.out.println("Uploading file " + path.getFileName() + "... ");
+        System.out.println("Uploading file " + relPath + "... ");
 
-        Storj.getInstance().uploadFile(bucket, path.toAbsolutePath().toString(), new UploadFileCallback() {
+        Storj.getInstance().uploadFile(bucket, relPath, path, new UploadFileCallback() {
             @Override
             public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
@@ -59,34 +61,49 @@ public class UploadFileTask implements Runnable {
 
             @Override
             public void onComplete(final String filePath, final String fileId) {
-                Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
-                    @Override
-                    public void onFilesReceived(File[] files) {
-                        File storjFile = null;
-                        for (File f : files) {
-                            if (fileId.equals(f.getId())) {
-                                storjFile = f;
+                final CountDownLatch latch = new CountDownLatch(1);
+                final boolean repeat[] = { true };
+
+                while (repeat[0]) {
+                    Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
+                        @Override
+                        public void onFilesReceived(File[] files) {
+                            File storjFile = null;
+                            for (File f : files) {
+                                if (fileId.equals(f.getId())) {
+                                    storjFile = f;
+                                }
                             }
+
+                            if (storjFile != null) {
+                                try {
+                                    DB.setSynced(storjFile, path);
+                                    DB.commit();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                System.out.printf("Cannot find uploaded file with id %s. Trying again...\n", fileId);
+                            }
+                            repeat[0] = false;
+                            latch.countDown();
                         }
 
-                        if (storjFile != null) {
-                            try {
-                                DB.setSynced(storjFile, path);
-                                DB.commit();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            System.out.println("Cannot find uploaded file with id " + fileId);
+                        @Override
+                        public void onError(String message) {
+                            System.out.printf("Failed getting info for uploaded file with id %s. Trying again...\n",
+                                    fileId);
+                            latch.countDown();
                         }
-                    }
+                    });
+                }
 
-                    @Override
-                    public void onError(String message) {
-                        System.out.println("Failed getting info for uploaded file with id " + fileId);
-                    }
-                });
-                System.out.println("  done.");
+                try {
+                    latch.await();
+                    System.out.println("  done.");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -104,49 +121,53 @@ public class UploadFileTask implements Runnable {
 
     private void deleteIfExisting() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean repeat[] = { true };
 
-        Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
-            @Override
-            public void onFilesReceived(File[] files) {
-                String fileName = path.getFileName().toString();
-                File storjFile = null;
-                for (File f : files) {
-                    if (fileName.equals(f.getName())) {
-                        storjFile = f;
+        while (repeat[0]) {
+            Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
+                @Override
+                public void onFilesReceived(File[] files) {
+                    File storjFile = null;
+                    for (File f : files) {
+                        if (relPath.equals(f.getName())) {
+                            storjFile = f;
+                        }
+                    }
+
+                    if (storjFile == null) {
+                        // no file to delete
+                        repeat[0] = false;
+                        latch.countDown();
+                    } else {
+                        System.out.print("Deleting old version of " + relPath + " on the cloud... ");
+
+                        Storj.getInstance().deleteFile(bucket, storjFile, new DeleteFileCallback() {
+                            @Override
+                            public void onFileDeleted() {
+                                System.out.println("done");
+                                repeat[0] = false;
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                System.out.println(message + ". Trying again...");
+                                latch.countDown();
+                            }
+                        });
                     }
                 }
 
-                if (storjFile == null) {
-                    // no file to delete
+                @Override
+                public void onError(String message) {
+                    System.out.println(String.format("Error checking if file with name %s exists: %s. Trying again...",
+                            relPath, message));
                     latch.countDown();
-                } else {
-                    System.out.print("Deleting old version of " + fileName + " on the cloud... ");
-
-                    Storj.getInstance().deleteFile(bucket, storjFile, new DeleteFileCallback() {
-                        @Override
-                        public void onFileDeleted() {
-                            System.out.println("done");
-                            latch.countDown();
-                        }
-
-                        @Override
-                        public void onError(String message) {
-                            System.out.println(message);
-                            latch.countDown();
-                        }
-                    });
                 }
-            }
+            });
 
-            @Override
-            public void onError(String message) {
-                System.out.println(String.format("Error checkging if file with name %s exists: %s",
-                        path.getFileName(), message));
-                latch.countDown();
-            }
-        });
-
-        latch.await();
+            latch.await();
+        }
     }
 
 }

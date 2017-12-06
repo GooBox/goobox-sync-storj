@@ -16,9 +16,7 @@
  */
 package io.goobox.sync.storj;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.nio.file.Files;
 
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +25,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.goobox.sync.storj.db.DB;
+import io.goobox.sync.storj.db.SyncState;
+import io.goobox.sync.storj.helpers.AssertState;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
 import io.goobox.sync.storj.mocks.FilesMock;
@@ -52,35 +52,27 @@ public class DeleteCloudFileTaskTest {
     }
 
     @Test
-    public void oneCloudDeleteTest() throws Exception {
-        new StorjMock(StorjMock.FILE_1);
-        new FilesMock(FileMock.FILE_1);
-
-        DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
-
-        new DeleteCloudFileTask(null, StorjMock.FILE_1).run();
-
-        assertEquals(0, DB.size());
-        assertFalse(DB.contains(StorjMock.FILE_1));
+    public void oneCloudDelete() throws Exception {
+        cloudDeleteTest(StorjMock.FILE_1, FileMock.FILE_1);
     }
 
     @Test
-    public void oneOfTwoCloudDeleteTest() throws Exception {
+    public void oneOfTwoCloudDelete() throws Exception {
         new StorjMock(StorjMock.FILE_1, StorjMock.FILE_2);
         new FilesMock(FileMock.FILE_1, FileMock.FILE_2);
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
         DB.setSynced(StorjMock.FILE_2, FileMock.FILE_2.getPath());
+        Files.deleteIfExists(FileMock.FILE_1.getPath());
+        DB.setForCloudDelete(StorjMock.FILE_1);
 
         new DeleteCloudFileTask(null, StorjMock.FILE_1).run();
 
-        assertEquals(1, DB.size());
-        assertFalse(DB.contains(StorjMock.FILE_1));
-        assertTrue(DB.contains(StorjMock.FILE_2));
+        AssertState.assertDB(StorjMock.FILE_2, FileMock.FILE_2, SyncState.SYNCED);
     }
 
     @Test
-    public void nonExistingLocalDeleteTest() throws Exception {
+    public void nonExistingLocalDelete() throws Exception {
         new StorjMock(StorjMock.FILE_1);
         new FilesMock(FileMock.FILE_1);
 
@@ -89,8 +81,40 @@ public class DeleteCloudFileTaskTest {
         File nonExisting = new File("non-existing-id", "non-existing", null, true, 12432, null, null, null, null);
         new DeleteCloudFileTask(null, nonExisting).run();
 
-        assertEquals(1, DB.size());
-        assertTrue(DB.contains(StorjMock.FILE_1));
+        AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
+    }
+
+    @Test
+    public void dirCloudDelete() throws Exception {
+        cloudDeleteTest(StorjMock.DIR, FileMock.DIR);
+    }
+
+    @Test
+    public void subDirCloudDelete() throws Exception {
+        cloudDeleteTest(StorjMock.SUB_DIR, FileMock.SUB_DIR);
+    }
+
+    @Test
+    public void subFileCloudDelete() throws Exception {
+        cloudDeleteTest(StorjMock.SUB_FILE, FileMock.SUB_FILE);
+    }
+
+    @Test
+    public void subSubFileCloudDelete() throws Exception {
+        cloudDeleteTest(StorjMock.SUB_SUB_FILE, FileMock.SUB_SUB_FILE);
+    }
+
+    private void cloudDeleteTest(File storjFile, FileMock localFile) throws Exception {
+        new StorjMock(storjFile);
+        new FilesMock(localFile);
+
+        DB.setSynced(storjFile, localFile.getPath());
+        Files.deleteIfExists(localFile.getPath());
+        DB.setForCloudDelete(storjFile);
+
+        new DeleteCloudFileTask(null, storjFile).run();
+
+        AssertState.assertEmptyDB();
     }
 
 }

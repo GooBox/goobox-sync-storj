@@ -31,7 +31,7 @@ public class AssertSyncFile {
 
     public static void assertWith(File storjFile, SyncState state) throws ParseException {
         SyncFile syncFile = DB.get(storjFile);
-        assertEquals(storjFile.getName(), syncFile.getName());
+        assertEquals(DB.getName(storjFile), syncFile.getName());
         assertEquals(storjFile.getId(), syncFile.getStorjId());
         assertEquals(Utils.getTime(storjFile.getCreated()), syncFile.getStorjCreatedTime());
         assertEquals(storjFile.getSize(), syncFile.getStorjSize());
@@ -42,7 +42,7 @@ public class AssertSyncFile {
 
     public static void assertWith(FileMock localFile, SyncState state) {
         SyncFile syncFile = DB.get(localFile.getPath());
-        assertEquals(localFile.getName(), syncFile.getName());
+        assertEquals(DB.getName(localFile.getPath()), syncFile.getName());
         assertEquals(null, syncFile.getStorjId());
         assertEquals(0, syncFile.getStorjCreatedTime());
         assertEquals(0, syncFile.getStorjSize());
@@ -53,7 +53,7 @@ public class AssertSyncFile {
 
     public static void assertWith(File storjFile, FileMock localFile, SyncState state) throws ParseException {
         SyncFile syncFile = DB.get(storjFile);
-        assertEquals(storjFile.getName(), syncFile.getName());
+        assertEquals(DB.getName(storjFile), syncFile.getName());
         assertEquals(storjFile.getId(), syncFile.getStorjId());
         assertEquals(Utils.getTime(storjFile.getCreated()), syncFile.getStorjCreatedTime());
         assertEquals(storjFile.getSize(), syncFile.getStorjSize());
