@@ -20,29 +20,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.goobox.sync.storj.db.DB;
+import io.storj.libstorj.File;
 
-public class DeleteLocalFileTask implements Runnable {
+public class CreateLocalDirTask implements Runnable {
 
-    private Path path;
+    private File storjDir;
 
-    public DeleteLocalFileTask(Path path) {
-        this.path = path;
+    public CreateLocalDirTask(File storjDir) {
+        this.storjDir = storjDir;
     }
 
     @Override
     public void run() {
-        Path relPath = Utils.getSyncDir().relativize(path);
-        System.out.printf("Deleting local %s %s...\n", Files.isDirectory(path) ? "directory" : "file", relPath);
+        Path relPath = Utils.getSyncDir().resolve(storjDir.getName());
+        System.out.print("Creating local directory " + relPath + "... ");
 
         try {
-            boolean success = Files.deleteIfExists(path);
-            if (success) {
-                System.out.println("done");
-                DB.remove(path);
-                DB.commit();
-            } else {
-                System.out.println("failed");
-            }
+            Path localDir = Files.createDirectories(relPath);
+            System.out.println("done");
+            DB.setSynced(storjDir, localDir);
+            DB.commit();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

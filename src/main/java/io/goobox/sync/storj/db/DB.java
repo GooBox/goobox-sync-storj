@@ -56,6 +56,14 @@ public class DB {
                 .openOrCreate();
     }
 
+    public static String getName(File file) {
+        return file.getName().replaceAll("/+$", ""); // remove trailing slash
+    }
+
+    public static String getName(Path path) {
+        return Utils.getSyncDir().relativize(path).toString();
+    }
+
     public synchronized static void close() {
         db().close();
     }
@@ -69,11 +77,11 @@ public class DB {
     }
 
     public synchronized static boolean contains(File file) {
-        return contains(file.getName());
+        return contains(getName(file));
     }
 
     public synchronized static boolean contains(Path path) {
-        return contains(path.getFileName().toString());
+        return contains(getName(path));
     }
 
     public synchronized static boolean contains(String fileName) {
@@ -81,11 +89,11 @@ public class DB {
     }
 
     public synchronized static SyncFile get(File file) {
-        return get(file.getName());
+        return get(getName(file));
     }
 
     public synchronized static SyncFile get(Path path) {
-        return get(path.getFileName().toString());
+        return get(getName(path));
     }
 
     public synchronized static SyncFile get(String fileName) {
@@ -93,11 +101,11 @@ public class DB {
     }
 
     private synchronized static SyncFile getOrCreate(File file) {
-        return getOrCreate(file.getName());
+        return getOrCreate(getName(file));
     }
 
     private synchronized static SyncFile getOrCreate(Path path) {
-        return getOrCreate(path.getFileName().toString());
+        return getOrCreate(getName(path));
     }
 
     private synchronized static SyncFile getOrCreate(String fileName) {
@@ -111,11 +119,11 @@ public class DB {
     }
 
     public synchronized static void remove(File file) {
-        remove(file.getName());
+        remove(getName(file));
     }
 
     public synchronized static void remove(Path path) {
-        remove(path.getFileName().toString());
+        remove(getName(path));
     }
 
     public synchronized static void remove(String fileName) {
@@ -169,7 +177,7 @@ public class DB {
     public synchronized static void setDownloadFailed(File storjFile, Path localFile) throws IOException {
         SyncFile syncFile = get(storjFile);
         syncFile.setCloudData(storjFile);
-        if (Files.exists(localFile)) {
+        if (localFile != null && Files.exists(localFile)) {
             syncFile.setLocalData(localFile);
         }
         syncFile.setState(SyncState.DOWNLOAD_FAILED);
@@ -196,6 +204,20 @@ public class DB {
         SyncFile syncFile = get(file);
         syncFile.setCloudData(file);
         syncFile.setState(SyncState.FOR_CLOUD_DELETE);
+        repo().update(syncFile);
+    }
+
+    public synchronized static void addForLocalCreateDir(File file) throws IOException {
+        SyncFile syncFile = getOrCreate(file);
+        syncFile.setCloudData(file);
+        syncFile.setState(SyncState.FOR_LOCAL_CREATE_DIR);
+        repo().update(syncFile);
+    }
+
+    public synchronized static void addForCloudCreateDir(Path path) throws IOException {
+        SyncFile syncFile = getOrCreate(path);
+        syncFile.setLocalData(path);
+        syncFile.setState(SyncState.FOR_CLOUD_CREATE_DIR);
         repo().update(syncFile);
     }
 

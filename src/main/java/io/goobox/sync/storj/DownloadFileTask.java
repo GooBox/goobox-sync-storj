@@ -17,6 +17,7 @@
 package io.goobox.sync.storj;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -39,6 +40,12 @@ public class DownloadFileTask implements Runnable {
     @Override
     public void run() {
         System.out.println("Downloading file " + file.getName() + "... ");
+
+        try {
+            Files.createDirectories(Utils.getSyncDir().resolve(file.getName()).getParent());
+        } catch (IOException e) {
+            System.out.println("Failed creating parent directories: " + e.getMessage());
+        }
 
         Storj.getInstance().downloadFile(bucket, file, new DownloadFileCallback() {
             @Override

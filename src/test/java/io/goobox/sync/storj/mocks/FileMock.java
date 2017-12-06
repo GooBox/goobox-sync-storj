@@ -20,29 +20,38 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 
+import io.goobox.sync.storj.Utils;
+
 public class FileMock {
 
-    public static final FileMock FILE_1 = new FileMock("file-1-name", 1510243787000L, 12345);
-    public static final FileMock FILE_2 = new FileMock("file-2-name", 1510667191000L, 983249);
-    public static final FileMock ENCRYPTED_FILE = new FileMock("encrypted-file-name", 1510566682000L, 23423313);
-    public static final FileMock MODIFIED_FILE_1 = new FileMock("file-1-name", 1510739536000L, 12653);
-    public static final FileMock MODIFIED_FILE_1_SAMESIZE = new FileMock("file-1-name", 1510739536000L, 12421);
-    public static final FileMock MODIFIED_FILE_1_NEWER = new FileMock("file-1-name", 1511778030312L, 12653);
+    public static final FileMock FILE_1 = new FileMock("file-1-name", 1510243787000L, 12345, false);
+    public static final FileMock FILE_2 = new FileMock("file-2-name", 1510667191000L, 983249, false);
+    public static final FileMock ENCRYPTED_FILE = new FileMock("encrypted-file-name", 1510566682000L, 23423313, false);
+    public static final FileMock MODIFIED_FILE_1 = new FileMock("file-1-name", 1510739536000L, 12653, false);
+    public static final FileMock MODIFIED_FILE_1_SAMESIZE = new FileMock("file-1-name", 1510739536000L, 12421, false);
+    public static final FileMock MODIFIED_FILE_1_NEWER = new FileMock("file-1-name", 1511778030312L, 12653, false);
+    public static final FileMock DIR = new FileMock("dir-name", 1512372256000L, 4096, true);
+    public static final FileMock SUB_DIR = new FileMock("dir-name/sub-dir-name", 1512395371000L, 4096, true);
+    public static final FileMock SUB_FILE = new FileMock("dir-name/sub-file-name", 1512398082000L, 2455, false);
+    public static final FileMock SUB_SUB_FILE = new FileMock("dir-name/sub-dir-name/sub-sub-file-name", 1512398147000L,
+            23467, false);
 
-    private static final String PARENT_FOLDER = "/some/local/folder";
-
+    private String relPath;
     private String name;
     private long lastModified;
     private long size;
+    private boolean directory;
 
-    public FileMock(String name, long lastModified, long size) {
-        this.name = name;
+    public FileMock(String relPath, long lastModified, long size, boolean directory) {
+        this.relPath = relPath;
+        this.name = Paths.get(relPath).getFileName().toString();
         this.lastModified = lastModified;
         this.size = size;
+        this.directory = directory;
     }
 
     public Path getPath() {
-        return Paths.get(PARENT_FOLDER).resolve(name);
+        return Utils.getSyncDir().resolve(relPath);
     }
 
     public String getName() {
@@ -59,6 +68,10 @@ public class FileMock {
 
     public long size() {
         return size;
+    }
+
+    public boolean isDirectory() {
+        return directory;
     }
 
 }

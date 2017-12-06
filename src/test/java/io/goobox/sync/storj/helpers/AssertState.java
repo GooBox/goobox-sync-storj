@@ -23,6 +23,8 @@ import java.text.ParseException;
 
 import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.CheckStateTask;
+import io.goobox.sync.storj.CreateCloudDirTask;
+import io.goobox.sync.storj.CreateLocalDirTask;
 import io.goobox.sync.storj.DeleteCloudFileTask;
 import io.goobox.sync.storj.DeleteLocalFileTask;
 import io.goobox.sync.storj.DownloadFileTask;
@@ -81,6 +83,16 @@ public class AssertState {
         assertDB(storjFile, localFile, SyncState.FOR_LOCAL_DELETE);
     }
 
+    public static void assertForLocalCreateDir(File storjFile) throws ParseException {
+        assertTaskQueue(CreateLocalDirTask.class);
+        assertDB(storjFile, SyncState.FOR_LOCAL_CREATE_DIR);
+    }
+
+    public static void assertForCloudCreateDir(FileMock localFile) throws ParseException {
+        assertTaskQueue(CreateCloudDirTask.class);
+        assertDB(localFile, SyncState.FOR_CLOUD_CREATE_DIR);
+    }
+
     public static void assertForDownloadFailed(File storjFile) throws ParseException {
         assertTaskQueue(SleepTask.class);
         assertDB(storjFile, SyncState.DOWNLOAD_FAILED);
@@ -106,30 +118,30 @@ public class AssertState {
         assertTrue(tasks.isEmpty());
     }
 
-    private static void assertTaskQueue(Class<? extends Runnable> task) {
+    public static void assertTaskQueue(Class<? extends Runnable> task) {
         TaskQueue tasks = App.getInstance().getTaskQueue();
         assertEquals(task, tasks.poll().getClass());
         assertEquals(CheckStateTask.class, tasks.poll().getClass());
         assertTrue(tasks.isEmpty());
     }
 
-    private static void assertEmptyDB() {
+    public static void assertEmptyDB() {
         assertEquals(0, DB.size());
     }
 
-    private static void assertDB(File storjFile, SyncState state) throws ParseException {
+    public static void assertDB(File storjFile, SyncState state) throws ParseException {
         assertEquals(1, DB.size());
         assertTrue(DB.contains(storjFile));
         AssertSyncFile.assertWith(storjFile, state);
     }
 
-    private static void assertDB(FileMock localFile, SyncState state) throws ParseException {
+    public static void assertDB(FileMock localFile, SyncState state) throws ParseException {
         assertEquals(1, DB.size());
         assertTrue(DB.contains(localFile.getPath()));
         AssertSyncFile.assertWith(localFile, state);
     }
 
-    private static void assertDB(File storjFile, FileMock localFile, SyncState state) throws ParseException {
+    public static void assertDB(File storjFile, FileMock localFile, SyncState state) throws ParseException {
         assertEquals(1, DB.size());
         assertTrue(DB.contains(storjFile));
         AssertSyncFile.assertWith(storjFile, localFile, state);

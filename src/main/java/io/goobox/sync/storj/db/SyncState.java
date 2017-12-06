@@ -23,6 +23,8 @@ public enum SyncState {
     FOR_UPLOAD,
     FOR_LOCAL_DELETE,
     FOR_CLOUD_DELETE,
+    FOR_LOCAL_CREATE_DIR,
+    FOR_CLOUD_CREATE_DIR,
     DOWNLOAD_FAILED,
     UPLOAD_FAILED,
     CONFLICT;
@@ -35,7 +37,9 @@ public enum SyncState {
         return this == FOR_DOWNLOAD
                 || this == FOR_UPLOAD
                 || this == FOR_LOCAL_DELETE
-                || this == FOR_CLOUD_DELETE;
+                || this == FOR_CLOUD_DELETE
+                || this == FOR_LOCAL_CREATE_DIR
+                || this == FOR_CLOUD_CREATE_DIR;
     }
 
     public boolean isFailed() {

@@ -21,6 +21,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import io.goobox.sync.storj.Utils;
 import mockit.Mock;
 import mockit.MockUp;
 
@@ -41,7 +43,7 @@ public class FilesMock extends MockUp<Files> {
     }
 
     @Mock
-    public DirectoryStream<Path> newDirectoryStream(Path dir) {
+    public DirectoryStream<Path> newDirectoryStream(final Path dir) {
         return new DirectoryStream<Path>() {
             @Override
             public void close() throws IOException {
@@ -51,7 +53,9 @@ public class FilesMock extends MockUp<Files> {
             public Iterator<Path> iterator() {
                 List<Path> paths = new ArrayList<>();
                 for (FileMock file : files) {
-                    paths.add(file.getPath());
+                    if (file.getPath().getParent().equals(dir)) {
+                        paths.add(file.getPath());
+                    }
                 }
                 return paths.iterator();
             }
@@ -79,6 +83,16 @@ public class FilesMock extends MockUp<Files> {
     }
 
     @Mock
+    public boolean isDirectory(Path path, LinkOption... options) {
+        for (FileMock file : files) {
+            if (file.getPath().equals(path)) {
+                return file.isDirectory();
+            }
+        }
+        return false;
+    }
+
+    @Mock
     public boolean exists(Path path, LinkOption... options) {
         for (FileMock file : files) {
             if (file.getPath().equals(path)) {
@@ -101,6 +115,20 @@ public class FilesMock extends MockUp<Files> {
             }
         }
         return false;
+    }
+
+    @Mock
+    public Path createDirectories(Path dir, FileAttribute<?>... attrs) throws IOException {
+        if (dir.equals(FileMock.DIR.getPath())) {
+            files.add(FileMock.DIR);
+            return dir;
+        } else if (dir.equals(FileMock.SUB_DIR.getPath())) {
+            files.add(FileMock.SUB_DIR);
+            return dir;
+        } else if (dir.equals(Utils.getSyncDir())) {
+            return dir;
+        }
+        throw new IllegalStateException();
     }
 
     public void modifyFile(FileMock oldFile, FileMock newFile) {
