@@ -31,8 +31,9 @@ public class DeleteLocalFileTask implements Runnable {
 
     @Override
     public void run() {
-        Path relPath = Utils.getSyncDir().relativize(path);
-        System.out.printf("Deleting local %s %s...\n", Files.isDirectory(path) ? "directory" : "file", relPath);
+        System.out.printf("Deleting local %s %s...\n",
+                Files.isDirectory(path) ? "directory" : "file",
+                Utils.getStorjName(path));
 
         try {
             boolean success = Files.deleteIfExists(path);

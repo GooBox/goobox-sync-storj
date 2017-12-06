@@ -18,6 +18,7 @@ package io.goobox.sync.storj;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
@@ -60,6 +61,15 @@ public class Utils {
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date = sdf.parse(storjTimestamp);
         return date.getTime();
+    }
+
+    public static String getStorjName(Path path) {
+        String name = getSyncDir().relativize(path).toString();
+        name = name.replace('\\', '/');
+        if (Files.isDirectory(path)) {
+            name += "/";
+        }
+        return name;
     }
 
     private static String getOsName() {
