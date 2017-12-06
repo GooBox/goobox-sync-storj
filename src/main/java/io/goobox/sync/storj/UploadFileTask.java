@@ -32,12 +32,12 @@ public class UploadFileTask implements Runnable {
 
     private Bucket bucket;
     private Path path;
-    private String relPath;
+    private String fileName;
 
     public UploadFileTask(Bucket bucket, Path path) {
         this.bucket = bucket;
         this.path = path;
-        this.relPath = Utils.getSyncDir().relativize(path).toString();
+        this.fileName = Utils.getStorjName(path);
     }
 
     @Override
@@ -49,9 +49,9 @@ public class UploadFileTask implements Runnable {
             return;
         }
 
-        System.out.println("Uploading file " + relPath + "... ");
+        System.out.println("Uploading file " + fileName + "... ");
 
-        Storj.getInstance().uploadFile(bucket, relPath, path, new UploadFileCallback() {
+        Storj.getInstance().uploadFile(bucket, fileName, path, new UploadFileCallback() {
             @Override
             public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
@@ -129,7 +129,7 @@ public class UploadFileTask implements Runnable {
                 public void onFilesReceived(File[] files) {
                     File storjFile = null;
                     for (File f : files) {
-                        if (relPath.equals(f.getName())) {
+                        if (fileName.equals(f.getName())) {
                             storjFile = f;
                         }
                     }
@@ -139,7 +139,7 @@ public class UploadFileTask implements Runnable {
                         repeat[0] = false;
                         latch.countDown();
                     } else {
-                        System.out.print("Deleting old version of " + relPath + " on the cloud... ");
+                        System.out.print("Deleting old version of " + fileName + " on the cloud... ");
 
                         Storj.getInstance().deleteFile(bucket, storjFile, new DeleteFileCallback() {
                             @Override
@@ -161,7 +161,7 @@ public class UploadFileTask implements Runnable {
                 @Override
                 public void onError(String message) {
                     System.out.println(String.format("Error checking if file with name %s exists: %s. Trying again...",
-                            relPath, message));
+                            fileName, message));
                     latch.countDown();
                 }
             });

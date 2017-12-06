@@ -61,7 +61,7 @@ public class DB {
     }
 
     public static String getName(Path path) {
-        return Utils.getSyncDir().relativize(path).toString();
+        return Utils.getStorjName(path).replaceAll("/+$", ""); // remove trailing slash
     }
 
     public synchronized static void close() {
