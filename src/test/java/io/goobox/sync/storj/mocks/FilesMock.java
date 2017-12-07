@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
@@ -129,6 +131,16 @@ public class FilesMock extends MockUp<Files> {
             return dir;
         }
         throw new IllegalStateException();
+    }
+
+    @Mock
+    public Path createTempFile(String prefix, String suffix, FileAttribute<?>... attrs) throws IOException {
+        return Paths.get(prefix + System.currentTimeMillis() + suffix);
+    }
+
+    @Mock
+    public Path write(Path path, byte[] bytes, OpenOption... options) throws IOException {
+        return path;
     }
 
     public void modifyFile(FileMock oldFile, FileMock newFile) {
