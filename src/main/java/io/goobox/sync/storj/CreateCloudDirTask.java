@@ -47,8 +47,7 @@ public class CreateCloudDirTask implements Runnable {
                 DB.setSynced(storjDir, path);
                 DB.commit();
             } else {
-                Path tmp = Files.createTempFile("storj", "dir");
-                Files.write(tmp, "/".getBytes());
+                final Path tmp = createTempDirFile();
 
                 System.out.println("Creating cloud directory " + dirName + "... ");
 
@@ -62,6 +61,8 @@ public class CreateCloudDirTask implements Runnable {
 
                     @Override
                     public void onComplete(final String filePath, final String fileId) {
+                        deleteTempDirFile(tmp);
+
                         final CountDownLatch latch = new CountDownLatch(1);
                         final boolean repeat[] = { true };
 
@@ -112,8 +113,11 @@ public class CreateCloudDirTask implements Runnable {
                     @Override
                     public void onError(String filePath, String message) {
                         try {
+                            deleteTempDirFile(tmp);
+
                             DB.setUploadFailed(path);
                             DB.commit();
+
                             System.out.println("  " + message);
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -160,6 +164,20 @@ public class CreateCloudDirTask implements Runnable {
         latch.await();
 
         return result[0];
+    }
+
+    private Path createTempDirFile() throws IOException {
+        Path tmp = Files.createTempFile("storj", "dir");
+        Files.write(tmp, "/".getBytes());
+        return tmp;
+    }
+
+    private void deleteTempDirFile(Path tmp) {
+        try {
+            Files.deleteIfExists(tmp);
+        } catch (IOException e) {
+            System.out.println("Failed deleting temp file: " + e.getMessage());
+        }
     }
 
 }
