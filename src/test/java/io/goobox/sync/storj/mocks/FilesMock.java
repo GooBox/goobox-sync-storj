@@ -17,6 +17,7 @@
 package io.goobox.sync.storj.mocks;
 
 import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -106,6 +107,14 @@ public class FilesMock extends MockUp<Files> {
 
     @Mock
     public boolean deleteIfExists(Path path) throws IOException {
+        if (isDirectory(path)) {
+            for (FileMock file : files) {
+                if (!file.getPath().equals(path) && file.getPath().startsWith(path)) {
+                    throw new DirectoryNotEmptyException(path.toString());
+                }
+            }
+        }
+
         if (Files.exists(path)) {
             Iterator<FileMock> i = files.iterator();
             while (i.hasNext()) {
