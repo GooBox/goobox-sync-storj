@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj;
 
+import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -36,17 +38,30 @@ public class DeleteLocalFileTask implements Runnable {
                 Utils.getStorjName(path));
 
         try {
-            boolean success = Files.deleteIfExists(path);
-            if (success) {
-                System.out.println("done");
-                DB.remove(path);
-                DB.commit();
-            } else {
-                System.out.println("failed");
-            }
+            Files.deleteIfExists(path);
+            DB.remove(path);
+            deleteParentIfEmpty();
+            System.out.println("done");
+        } catch (DirectoryNotEmptyException e) {
+            DB.remove(path);
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        } finally {
+            DB.commit();
         }
+    }
+
+    private void deleteParentIfEmpty() {
+        Path parent = path.getParent();
+        if (!parent.equals(Utils.getSyncDir())) {
+            try {
+                Files.deleteIfExists(parent);
+                DB.remove(parent);
+            } catch (IOException e) {
+                // do nothing - most probably the dir is not empty
+            }
+        }
+
     }
 
 }
