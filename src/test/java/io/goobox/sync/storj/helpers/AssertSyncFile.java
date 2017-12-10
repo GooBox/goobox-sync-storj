@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.text.ParseException;
 
-import io.goobox.sync.storj.Utils;
+import io.goobox.sync.storj.StorjUtil;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
@@ -33,7 +33,7 @@ public class AssertSyncFile {
         SyncFile syncFile = DB.get(storjFile);
         assertEquals(DB.getName(storjFile), syncFile.getName());
         assertEquals(storjFile.getId(), syncFile.getStorjId());
-        assertEquals(Utils.getTime(storjFile.getCreated()), syncFile.getStorjCreatedTime());
+        assertEquals(StorjUtil.getTime(storjFile.getCreated()), syncFile.getStorjCreatedTime());
         assertEquals(storjFile.getSize(), syncFile.getStorjSize());
         assertEquals(0, syncFile.getLocalModifiedTime());
         assertEquals(0, syncFile.getLocalSize());
@@ -55,7 +55,7 @@ public class AssertSyncFile {
         SyncFile syncFile = DB.get(storjFile);
         assertEquals(DB.getName(storjFile), syncFile.getName());
         assertEquals(storjFile.getId(), syncFile.getStorjId());
-        assertEquals(Utils.getTime(storjFile.getCreated()), syncFile.getStorjCreatedTime());
+        assertEquals(StorjUtil.getTime(storjFile.getCreated()), syncFile.getStorjCreatedTime());
         assertEquals(storjFile.getSize(), syncFile.getStorjSize());
         assertEquals(localFile.lastModified(), syncFile.getLocalModifiedTime());
         assertEquals(localFile.size(), syncFile.getLocalSize());

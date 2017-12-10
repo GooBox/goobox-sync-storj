@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 
-import io.goobox.sync.storj.Utils;
+import io.goobox.sync.common.Utils;
 
 public class FileMock {
 

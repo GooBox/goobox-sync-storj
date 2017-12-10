@@ -37,7 +37,7 @@ public class UploadFileTask implements Runnable {
     public UploadFileTask(Bucket bucket, Path path) {
         this.bucket = bucket;
         this.path = path;
-        this.fileName = Utils.getStorjName(path);
+        this.fileName = StorjUtil.getStorjName(path);
     }
 
     @Override

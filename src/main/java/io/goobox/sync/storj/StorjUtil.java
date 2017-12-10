@@ -18,31 +18,33 @@ package io.goobox.sync.storj;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 import io.goobox.sync.common.Utils;
-import io.goobox.sync.storj.db.DB;
-import io.storj.libstorj.File;
 
-public class CreateLocalDirTask implements Runnable {
+public class StorjUtil {
 
-    private File storjDir;
-
-    public CreateLocalDirTask(File storjDir) {
-        this.storjDir = storjDir;
+    public static Path getStorjConfigDir() {
+        return Utils.getHomeDir().resolve(".storj");
     }
 
-    @Override
-    public void run() {
-        System.out.print("Creating local directory " + storjDir.getName() + "... ");
+    public static long getTime(String storjTimestamp) throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date = sdf.parse(storjTimestamp);
+        return date.getTime();
+    }
 
-        try {
-            Path localDir = Files.createDirectories(Utils.getSyncDir().resolve(storjDir.getName()));
-            System.out.println("done");
-            DB.setSynced(storjDir, localDir);
-            DB.commit();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+    public static String getStorjName(Path path) {
+        String name = Utils.getSyncDir().relativize(path).toString();
+        name = name.replace('\\', '/');
+        if (Files.isDirectory(path)) {
+            name += "/";
         }
+        return name;
     }
 
 }
