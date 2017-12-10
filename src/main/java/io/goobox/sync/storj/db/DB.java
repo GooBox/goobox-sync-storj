@@ -26,7 +26,8 @@ import org.dizitart.no2.objects.ObjectFilter;
 import org.dizitart.no2.objects.ObjectRepository;
 import org.dizitart.no2.objects.filters.ObjectFilters;
 
-import io.goobox.sync.storj.Utils;
+import io.goobox.sync.common.Utils;
+import io.goobox.sync.storj.StorjUtil;
 import io.storj.libstorj.File;
 
 public class DB {
@@ -61,7 +62,7 @@ public class DB {
     }
 
     public static String getName(Path path) {
-        return Utils.getStorjName(path).replaceAll("/+$", ""); // remove trailing slash
+        return StorjUtil.getStorjName(path).replaceAll("/+$", ""); // remove trailing slash
     }
 
     public synchronized static void close() {

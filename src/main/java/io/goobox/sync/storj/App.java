@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
+import io.goobox.sync.common.Utils;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
 import io.storj.libstorj.GetBucketsCallback;
@@ -62,7 +63,7 @@ public class App {
     }
 
     private void init() {
-        Storj.setConfigDirectory(Utils.getStorjConfigDir());
+        Storj.setConfigDirectory(StorjUtil.getStorjConfigDir());
         Storj.setDownloadDirectory(Utils.getSyncDir());
 
         if (!checkAndCreateSyncDir()) {

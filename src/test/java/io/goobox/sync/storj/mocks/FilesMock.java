@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import io.goobox.sync.storj.Utils;
+import io.goobox.sync.common.Utils;
 import mockit.Mock;
 import mockit.MockUp;
 

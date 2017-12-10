@@ -41,7 +41,7 @@ public class CreateCloudDirTask implements Runnable {
     @Override
     public void run() {
         try {
-            String dirName = Utils.getStorjName(path);
+            String dirName = StorjUtil.getStorjName(path);
             File storjDir = getCloudDir(dirName);
             if (storjDir != null) {
                 DB.setSynced(storjDir, path);

@@ -24,7 +24,7 @@ import java.text.ParseException;
 
 import org.dizitart.no2.objects.Id;
 
-import io.goobox.sync.storj.Utils;
+import io.goobox.sync.storj.StorjUtil;
 import io.storj.libstorj.File;
 
 @SuppressWarnings("serial")
@@ -104,7 +104,7 @@ public class SyncFile implements Serializable {
     public void setCloudData(File file) {
         setStorjId(file.getId());
         try {
-            setStorjCreatedTime(Utils.getTime(file.getCreated()));
+            setStorjCreatedTime(StorjUtil.getTime(file.getCreated()));
         } catch (ParseException e) {
             e.printStackTrace();
         }

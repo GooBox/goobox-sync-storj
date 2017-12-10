@@ -4,7 +4,7 @@
 
   <groupId>io.goobox</groupId>
   <artifactId>goobox-sync-storj</artifactId>
-  <version>0.0.8</version>
+  <version>0.0.9</version>
   <packaging>jar</packaging>
 
   <name>Goobox sync app for Storj</name>
@@ -54,6 +54,11 @@
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>io.goobox</groupId>
+      <artifactId>goobox-sync-common</artifactId>
+      <version>0.0.1</version>
+    </dependency>
     <dependency>
       <groupId>io.storj</groupId>
       <artifactId>libstorj-java</artifactId>

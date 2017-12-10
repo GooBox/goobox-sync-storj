@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
@@ -208,7 +209,7 @@ public class CheckStateTask implements Runnable {
     }
 
     private long getCloudTimestamp(File file) throws ParseException {
-        return Utils.getTime(file.getCreated());
+        return StorjUtil.getTime(file.getCreated());
     }
 
     private long getLocalTimestamp(Path path) throws IOException {

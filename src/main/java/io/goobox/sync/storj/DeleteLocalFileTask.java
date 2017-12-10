@@ -21,6 +21,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 
 public class DeleteLocalFileTask implements Runnable {
@@ -35,7 +36,7 @@ public class DeleteLocalFileTask implements Runnable {
     public void run() {
         System.out.printf("Deleting local %s %s...\n",
                 Files.isDirectory(path) ? "directory" : "file",
-                Utils.getStorjName(path));
+                StorjUtil.getStorjName(path));
 
         try {
             Files.deleteIfExists(path);
