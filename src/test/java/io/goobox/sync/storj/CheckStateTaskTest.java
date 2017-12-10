@@ -1600,4 +1600,14 @@ public class CheckStateTaskTest {
         AssertState.assertSleepEmptyDB();
     }
 
+    @Test
+    public void excludedFileNoCloud() throws Exception {
+        new StorjMock();
+        new FilesMock(FileMock.EXCLUDED_FILE);
+
+        new CheckStateTask().run();
+
+        AssertState.assertSleepEmptyDB();
+    }
+
 }
