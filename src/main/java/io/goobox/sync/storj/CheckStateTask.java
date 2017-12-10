@@ -155,7 +155,7 @@ public class CheckStateTask implements Runnable {
                     } else {
                         setForLocalDelete(path);
                     }
-                } else {
+                } else if (!Utils.isExcluded(path)) {
                     if (Files.isDirectory(path)) {
                         addForCloudCreateDir(path);
                     } else {
