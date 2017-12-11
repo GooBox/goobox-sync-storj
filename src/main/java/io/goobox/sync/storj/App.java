@@ -22,13 +22,15 @@ import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
 import io.goobox.sync.common.Utils;
+import io.goobox.sync.common.systemtray.ShutdownListener;
+import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
 import io.storj.libstorj.GetBucketsCallback;
 import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.Storj;
 
-public class App {
+public class App implements ShutdownListener {
 
     private static App instance;
 
@@ -63,6 +65,9 @@ public class App {
     }
 
     private void init() {
+        SystemTrayHelper.setIdle();
+        SystemTrayHelper.setShutdownListener(this);
+
         Storj.setConfigDirectory(StorjUtil.getStorjConfigDir());
         Storj.setDownloadDirectory(Utils.getSyncDir());
 
@@ -87,6 +92,12 @@ public class App {
 
         fileWatcher.start();
         taskExecutor.start();
+    }
+
+    @Override
+    public void shutdown() {
+        // TODO graceful shutdown
+        System.exit(0);
     }
 
     private boolean checkAndCreateSyncDir() {

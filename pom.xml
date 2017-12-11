@@ -57,7 +57,7 @@
     <dependency>
       <groupId>io.goobox</groupId>
       <artifactId>goobox-sync-common</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2</version>
     </dependency>
     <dependency>
       <groupId>io.storj</groupId>
@@ -73,11 +73,6 @@
       <groupId>net.harawata</groupId>
       <artifactId>appdirs</artifactId>
       <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-nop</artifactId>
-      <version>1.7.21</version>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>

@@ -27,6 +27,7 @@ import java.util.Deque;
 import java.util.List;
 
 import io.goobox.sync.common.Utils;
+import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
@@ -54,6 +55,8 @@ public class CheckStateTask implements Runnable {
         }
 
         System.out.println("Checking for changes...");
+        SystemTrayHelper.setSynchronizing();
+
         Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
@@ -64,6 +67,7 @@ public class CheckStateTask implements Runnable {
                 if (tasks.isEmpty()) {
                     // Sleep some time to avoid overloading the bridge
                     tasks.add(new SleepTask());
+                    SystemTrayHelper.setIdle();
                 }
                 // Add itself to the queueAdd itself to the queue
                 tasks.add(CheckStateTask.this);
