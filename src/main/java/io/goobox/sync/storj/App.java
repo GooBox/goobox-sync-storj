@@ -21,9 +21,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
+import com.liferay.nativity.control.NativityControl;
+import com.liferay.nativity.control.NativityControlUtil;
+import com.liferay.nativity.modules.fileicon.FileIconControl;
+import com.liferay.nativity.modules.fileicon.FileIconControlCallback;
+import com.liferay.nativity.modules.fileicon.FileIconControlUtil;
+import com.liferay.nativity.util.OSDetector;
+
 import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.systemtray.ShutdownListener;
 import io.goobox.sync.common.systemtray.SystemTrayHelper;
+import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
 import io.storj.libstorj.GetBucketsCallback;
@@ -42,6 +50,49 @@ public class App implements ShutdownListener {
     public static void main(String[] args) {
         instance = new App();
         instance.init();
+
+        NativityControl nativityControl = NativityControlUtil.getNativityControl();
+        nativityControl.connect();
+
+        // Setting filter folders is required for Mac's Finder Sync plugin
+        // nativityControl.setFilterFolder(Utils.getSyncDir().toString());
+
+        /* File Icons */
+
+        int testIconId = 1;
+
+        // FileIconControlCallback used by Windows and Mac
+        FileIconControlCallback fileIconControlCallback = new FileIconControlCallback() {
+            @Override
+            public int getIconForFile(String path) {
+                return 1; // testIconId;
+            }
+        };
+
+        FileIconControl fileIconControl = FileIconControlUtil.getFileIconControl(nativityControl,
+                fileIconControlCallback);
+
+        fileIconControl.enableFileIcons();
+
+        String testFilePath = Utils.getSyncDir().toString();
+
+        if (OSDetector.isWindows()) {
+            // This id is determined when building the DLL
+            testIconId = 1;
+        } else if (OSDetector.isMinimumAppleVersion(OSDetector.MAC_YOSEMITE_10_10)) {
+            // Used by Mac Finder Sync. This unique id can be set at runtime.
+            testIconId = 1;
+
+            fileIconControl.registerIconWithId("/tmp/goobox.icns",
+                    "test label", "" + testIconId);
+        } else if (OSDetector.isLinux()) {
+            // Used by Mac Injector and Linux
+            testIconId = fileIconControl.registerIcon("/tmp/git-clean.png");
+        }
+
+        // FileIconControl.setFileIcon() method only used by Linux
+        fileIconControl.setFileIcon(testFilePath, testIconId);
+        nativityControl.disconnect();
     }
 
     public static App getInstance() {
@@ -97,6 +148,7 @@ public class App implements ShutdownListener {
     @Override
     public void shutdown() {
         // TODO graceful shutdown
+        OverlayHelper.getInstance().shutdown();
         System.exit(0);
     }
 

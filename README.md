@@ -35,3 +35,12 @@ The app uses an embedded Nitrine database for storing the current sync state of 
 - `~/Library/Application Support/Goobox` for macOS
 
 The `list-db.bat` script can be used to dump the content of the database. This might be useful for debugging.
+
+### Overlay icons on Windows
+
+Setting up the overlay icons on Windows required the following steps:
+
+1. Open a Command Prompt as Administrator
+1. Execute the `register-dlls.bat` file
+1. Restart Windows
+1. Run the app as usual
