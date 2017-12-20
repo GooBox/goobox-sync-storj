@@ -40,6 +40,7 @@ The `list-db.bat` script can be used to dump the content of the database. This m
 
 Setting up the overlay icons on Windows required the following steps:
 
+1. Make sure the [Microsoft Visual C++ 2010 Redistributable Package (x64)](https://www.microsoft.com/en-US/download/details.aspx?id=13523) is installed on the system
 1. Open a Command Prompt as Administrator
 1. Execute the `register-dlls.bat` file
 1. Restart Windows
