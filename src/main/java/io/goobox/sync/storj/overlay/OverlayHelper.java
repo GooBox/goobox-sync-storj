@@ -18,9 +18,12 @@ package io.goobox.sync.storj.overlay;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.liferay.nativity.control.NativityControl;
 import com.liferay.nativity.control.NativityControlUtil;
@@ -34,13 +37,14 @@ import com.liferay.nativity.modules.fileicon.FileIconControlUtil;
 import com.liferay.nativity.util.OSDetector;
 
 import io.goobox.sync.common.Utils;
+import io.goobox.sync.storj.db.DB;
 
-public class OverlayHelper {
+public class OverlayHelper implements FileIconControlCallback, ContextMenuControlCallback {
 
     private NativityControl nativityControl;
     private FileIconControl fileIconControl;
 
-    private int stateIconId = 0;
+    private int globalStateIconId = OverlayIcon.NONE.id();
 
     private static OverlayHelper instance;
 
@@ -60,7 +64,7 @@ public class OverlayHelper {
             return;
         }
 
-        stateIconId = 1;
+        globalStateIconId = OverlayIcon.OK.id();
         refresh();
     }
 
@@ -69,7 +73,7 @@ public class OverlayHelper {
             return;
         }
 
-        stateIconId = 2;
+        globalStateIconId = OverlayIcon.SYNCING.id();
         refresh();
     }
 
@@ -78,9 +82,19 @@ public class OverlayHelper {
             return;
         }
 
-        stateIconId = 0;
+        globalStateIconId = OverlayIcon.NONE.id();
         refresh();
         nativityControl.disconnect();
+    }
+
+    public void refresh(Path path) {
+        if (fileIconControl != null && path != null) {
+            String[] pathAndParents = Stream.iterate(path, p -> p.getParent())
+                    .limit(Utils.getSyncDir().relativize(path).getNameCount())
+                    .map(Path::toString)
+                    .toArray(String[]::new);
+            fileIconControl.refreshIcons(pathAndParents);
+        }
     }
 
     private void refresh() {
@@ -98,6 +112,7 @@ public class OverlayHelper {
         // Setting filter folders is required for Mac's Finder Sync plugin
         nativityControl.setFilterFolder(Utils.getSyncDir().toString());
 
+        // Make Goobox a system folder
         DosFileAttributeView attr = Files.getFileAttributeView(Utils.getSyncDir(), DosFileAttributeView.class);
         try {
             attr.setSystem(true);
@@ -105,46 +120,53 @@ public class OverlayHelper {
             e.printStackTrace();
         }
 
-        // FileIconControlCallback used by Windows and Mac
-        FileIconControlCallback fileIconControlCallback = new FileIconControlCallback() {
-            @Override
-            public int getIconForFile(String path) {
-                if (Utils.getSyncDir().toString().equals(path)) {
-                    return stateIconId;
-                }
-                return 0;
-            }
-        };
-
-        fileIconControl = FileIconControlUtil.getFileIconControl(nativityControl, fileIconControlCallback);
-
+        fileIconControl = FileIconControlUtil.getFileIconControl(nativityControl, this);
         fileIconControl.enableFileIcons();
 
         /* Context Menus */
+        ContextMenuControlUtil.getContextMenuControl(nativityControl, this);
+    }
 
-        ContextMenuControlCallback contextMenuControlCallback = new ContextMenuControlCallback() {
+    /* FileIconControlCallback used by Windows and Mac */
+    @Override
+    public int getIconForFile(String path) {
+        Path p = Paths.get(path);
+        if (!p.startsWith(Utils.getSyncDir())) {
+            return OverlayIcon.NONE.id();
+        } else if (Utils.getSyncDir().equals(p)) {
+            return globalStateIconId;
+        } else {
+            try {
+                return Files.walk(p)
+                        .map(DB::get)
+                        .map(OverlayIcon::from)
+                        .map(OverlayIcon::id)
+                        .reduce(OverlayIcon.NONE.id(), Integer::max);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public List<ContextMenuItem> getContextMenuItems(String[] paths) {
+        ContextMenuItem contextMenuItem = new ContextMenuItem("Goobox");
+
+        ContextMenuAction contextMenuAction = new ContextMenuAction() {
             @Override
-            public List<ContextMenuItem> getContextMenuItems(String[] paths) {
-                ContextMenuItem contextMenuItem = new ContextMenuItem("Goobox");
-
-                ContextMenuAction contextMenuAction = new ContextMenuAction() {
-                    @Override
-                    public void onSelection(String[] paths) {
-                        System.out.println("Context menu selection: " + String.join("; ", paths));
-                    }
-                };
-
-                contextMenuItem.setContextMenuAction(contextMenuAction);
-
-                List<ContextMenuItem> contextMenuItems = new ArrayList<ContextMenuItem>();
-                contextMenuItems.add(contextMenuItem);
-
-                // Mac Finder Sync will only show the parent level of context menus
-                return contextMenuItems;
+            public void onSelection(String[] paths) {
+                System.out.println("Context menu selection: " + String.join("; ", paths));
             }
         };
 
-        ContextMenuControlUtil.getContextMenuControl(nativityControl, contextMenuControlCallback);
+        contextMenuItem.setContextMenuAction(contextMenuAction);
+
+        List<ContextMenuItem> contextMenuItems = new ArrayList<ContextMenuItem>();
+        contextMenuItems.add(contextMenuItem);
+
+        // Mac Finder Sync will only show the parent level of context menus
+        return contextMenuItems;
     }
 
 }

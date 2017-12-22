@@ -19,6 +19,7 @@ package io.goobox.sync.storj.mocks;
 import java.io.IOException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
@@ -32,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import io.goobox.sync.common.Utils;
 import mockit.Mock;
@@ -150,6 +152,13 @@ public class FilesMock extends MockUp<Files> {
     @Mock
     public Path write(Path path, byte[] bytes, OpenOption... options) throws IOException {
         return path;
+    }
+
+    @Mock
+    public Stream<Path> walk(Path start, FileVisitOption... options) throws IOException {
+        return Stream.of(files.toArray(new FileMock[files.size()]))
+                .map(FileMock::getPath)
+                .filter(p -> p.startsWith(start));
     }
 
     public void modifyFile(FileMock oldFile, FileMock newFile) {
