@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.File;
-import io.storj.libstorj.Storj;
 
 public class DeleteCloudFileTask implements Runnable {
 
@@ -36,7 +35,7 @@ public class DeleteCloudFileTask implements Runnable {
     public void run() {
         System.out.printf("Deleting cloud %s %s...\n", file.isDirectory() ? "directory" : "file", file.getName());
 
-        Storj.getInstance().deleteFile(bucket, file, new DeleteFileCallback() {
+        App.getInstance().getStorj().deleteFile(bucket, file, new DeleteFileCallback() {
             @Override
             public void onFileDeleted() {
                 System.out.println("done");

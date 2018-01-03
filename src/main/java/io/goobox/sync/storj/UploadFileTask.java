@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.File;
 import io.storj.libstorj.ListFilesCallback;
-import io.storj.libstorj.Storj;
 import io.storj.libstorj.UploadFileCallback;
 
 public class UploadFileTask implements Runnable {
@@ -51,7 +50,7 @@ public class UploadFileTask implements Runnable {
 
         System.out.println("Uploading file " + fileName + "... ");
 
-        Storj.getInstance().uploadFile(bucket, fileName, path, new UploadFileCallback() {
+        App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
             @Override
             public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
@@ -60,48 +59,11 @@ public class UploadFileTask implements Runnable {
             }
 
             @Override
-            public void onComplete(final String filePath, final String fileId) {
-                final CountDownLatch latch = new CountDownLatch(1);
-                final boolean repeat[] = { true };
-
-                while (repeat[0]) {
-                    Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
-                        @Override
-                        public void onFilesReceived(File[] files) {
-                            File storjFile = null;
-                            for (File f : files) {
-                                if (fileId.equals(f.getId())) {
-                                    storjFile = f;
-                                }
-                            }
-
-                            if (storjFile != null) {
-                                try {
-                                    DB.setSynced(storjFile, path);
-                                    DB.commit();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                System.out.printf("Cannot find uploaded file with id %s. Trying again...\n", fileId);
-                            }
-                            repeat[0] = false;
-                            latch.countDown();
-                        }
-
-                        @Override
-                        public void onError(String message) {
-                            System.out.printf("Failed getting info for uploaded file with id %s. Trying again...\n",
-                                    fileId);
-                            latch.countDown();
-                        }
-                    });
-                }
-
+            public void onComplete(final String filePath, final File file) {
                 try {
-                    latch.await();
-                    System.out.println("  done.");
-                } catch (InterruptedException e) {
+                    DB.setSynced(file, path);
+                    DB.commit();
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -124,7 +86,7 @@ public class UploadFileTask implements Runnable {
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
-            Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
+            App.getInstance().getStorj().listFiles(bucket, new ListFilesCallback() {
                 @Override
                 public void onFilesReceived(File[] files) {
                     File storjFile = null;
@@ -141,7 +103,7 @@ public class UploadFileTask implements Runnable {
                     } else {
                         System.out.print("Deleting old version of " + fileName + " on the cloud... ");
 
-                        Storj.getInstance().deleteFile(bucket, storjFile, new DeleteFileCallback() {
+                        App.getInstance().getStorj().deleteFile(bucket, storjFile, new DeleteFileCallback() {
                             @Override
                             public void onFileDeleted() {
                                 System.out.println("done");

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncState;
 import io.goobox.sync.storj.helpers.AssertState;
+import io.goobox.sync.storj.mocks.AppMock;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
 import io.goobox.sync.storj.mocks.FilesMock;
@@ -39,6 +40,7 @@ public class DeleteCloudFileTaskTest {
 
     @BeforeClass
     public static void applySharedFakes() {
+        new AppMock();
         new DBMock();
     }
 
@@ -78,7 +80,7 @@ public class DeleteCloudFileTaskTest {
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
 
-        File nonExisting = new File("non-existing-id", "non-existing", null, true, 12432, null, null, null, null);
+        File nonExisting = new File("non-existing-id", "bucket-id", "non-existing", null, true, 12432, null, null, null, null);
         new DeleteCloudFileTask(null, nonExisting).run();
 
         AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);

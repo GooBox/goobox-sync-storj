@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncState;
 import io.goobox.sync.storj.helpers.AssertState;
+import io.goobox.sync.storj.mocks.AppMock;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
 import io.goobox.sync.storj.mocks.FilesMock;
@@ -36,6 +37,7 @@ public class CreateCloudDirTaskTest {
 
     @BeforeClass
     public static void applySharedFakes() {
+        new AppMock();
         new DBMock();
     }
 

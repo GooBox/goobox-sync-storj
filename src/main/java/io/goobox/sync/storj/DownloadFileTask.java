@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DownloadFileCallback;
 import io.storj.libstorj.File;
-import io.storj.libstorj.Storj;
 
 public class DownloadFileTask implements Runnable {
 
@@ -48,16 +47,16 @@ public class DownloadFileTask implements Runnable {
             System.out.println("Failed creating parent directories: " + e.getMessage());
         }
 
-        Storj.getInstance().downloadFile(bucket, file, new DownloadFileCallback() {
+        App.getInstance().getStorj().downloadFile(bucket, file, new DownloadFileCallback() {
             @Override
-            public void onProgress(File file, double progress, long downloadedBytes, long totalBytes) {
+            public void onProgress(String fileId, double progress, long downloadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
                         (int) (progress * 100), downloadedBytes, totalBytes);
                 System.out.println(progressMessage);
             }
 
             @Override
-            public void onComplete(File file, String localPath) {
+            public void onComplete(String fileId, String localPath) {
                 try {
                     DB.setSynced(file, Paths.get(localPath));
                     DB.commit();
@@ -68,7 +67,7 @@ public class DownloadFileTask implements Runnable {
             }
 
             @Override
-            public void onError(File file, String message) {
+            public void onError(String fileId, String message) {
                 Path localPath = Utils.getSyncDir().resolve(file.getName());
                 try {
                     DB.setDownloadFailed(file, localPath);

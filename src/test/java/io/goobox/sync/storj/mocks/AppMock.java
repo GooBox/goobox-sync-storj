@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,18 +20,28 @@ import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.FileWatcher;
 import io.goobox.sync.storj.TaskQueue;
 import io.storj.libstorj.Bucket;
+import io.storj.libstorj.Storj;
 import mockit.Mock;
 import mockit.MockUp;
 
 public class AppMock extends MockUp<App> {
 
     private App instance = new App();
+    private Storj storj;
     private TaskQueue tasks = new TaskQueue();
     private FileWatcher fileWatcher = new FileWatcher();
 
     @Mock
     public App getInstance() {
         return instance;
+    }
+
+    @Mock
+    public Storj getStorj() {
+        if (storj == null) {
+            storj = new Storj();
+        }
+        return storj;
     }
 
     @Mock

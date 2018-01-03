@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.helpers.StorjUtil;
+import io.goobox.sync.storj.mocks.AppMock;
 import io.goobox.sync.storj.mocks.DBMock;
 import io.goobox.sync.storj.mocks.FileMock;
 import io.goobox.sync.storj.mocks.FilesMock;
@@ -36,6 +37,7 @@ public class OverlayHelperTest {
 
     @BeforeClass
     public static void applySharedFakes() {
+        new AppMock();
         new DBMock();
     }
 
