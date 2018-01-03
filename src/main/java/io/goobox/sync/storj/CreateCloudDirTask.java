@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.File;
 import io.storj.libstorj.ListFilesCallback;
-import io.storj.libstorj.Storj;
 import io.storj.libstorj.UploadFileCallback;
 
 public class CreateCloudDirTask implements Runnable {
@@ -51,7 +50,7 @@ public class CreateCloudDirTask implements Runnable {
 
                 System.out.println("Creating cloud directory " + dirName + "... ");
 
-                Storj.getInstance().uploadFile(bucket, dirName, tmp, new UploadFileCallback() {
+                App.getInstance().getStorj().uploadFile(bucket, dirName, tmp.toString(), new UploadFileCallback() {
                     @Override
                     public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                         String progressMessage = String.format("  %3d%% %15d/%d bytes",
@@ -60,52 +59,13 @@ public class CreateCloudDirTask implements Runnable {
                     }
 
                     @Override
-                    public void onComplete(final String filePath, final String fileId) {
-                        deleteTempDirFile(tmp);
-
-                        final CountDownLatch latch = new CountDownLatch(1);
-                        final boolean repeat[] = { true };
-
-                        while (repeat[0]) {
-                            Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
-                                @Override
-                                public void onFilesReceived(File[] files) {
-                                    File storjFile = null;
-                                    for (File f : files) {
-                                        if (fileId.equals(f.getId())) {
-                                            storjFile = f;
-                                        }
-                                    }
-
-                                    if (storjFile != null) {
-                                        try {
-                                            DB.setSynced(storjFile, path);
-                                            DB.commit();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                    } else {
-                                        System.out.printf("Cannot find uploaded file with id %s. Trying again...\n",
-                                                fileId);
-                                    }
-                                    repeat[0] = false;
-                                    latch.countDown();
-                                }
-
-                                @Override
-                                public void onError(String message) {
-                                    System.out.printf(
-                                            "Failed getting info for uploaded file with id %s. Trying again...\n",
-                                            fileId);
-                                    latch.countDown();
-                                }
-                            });
-                        }
-
+                    public void onComplete(final String filePath, final File file) {
                         try {
-                            latch.await();
-                            System.out.println("  done.");
-                        } catch (InterruptedException e) {
+                            deleteTempDirFile(tmp);
+
+                            DB.setSynced(file, path);
+                            DB.commit();
+                        } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
@@ -139,7 +99,7 @@ public class CreateCloudDirTask implements Runnable {
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
-            Storj.getInstance().listFiles(bucket, new ListFilesCallback() {
+            App.getInstance().getStorj().listFiles(bucket, new ListFilesCallback() {
                 @Override
                 public void onFilesReceived(File[] files) {
                     for (File f : files) {

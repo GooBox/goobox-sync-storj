@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.File;
 import io.storj.libstorj.ListFilesCallback;
-import io.storj.libstorj.Storj;
 
 public class CheckStateTask implements Runnable {
 
@@ -59,7 +58,7 @@ public class CheckStateTask implements Runnable {
         SystemTrayHelper.setSynchronizing();
         OverlayHelper.getInstance().setSynchronizing();
 
-        Storj.getInstance().listFiles(gooboxBucket, new ListFilesCallback() {
+        App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(File[] files) {
                 processFiles(files);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ public class App implements ShutdownListener {
 
     private static App instance;
 
+    private Storj storj;
     private Bucket gooboxBucket;
     private TaskQueue tasks;
     private TaskExecutor taskExecutor;
@@ -99,6 +100,10 @@ public class App implements ShutdownListener {
         return instance;
     }
 
+    public Storj getStorj() {
+        return storj;
+    }
+
     public Bucket getGooboxBucket() {
         return gooboxBucket;
     }
@@ -119,8 +124,9 @@ public class App implements ShutdownListener {
         SystemTrayHelper.setIdle();
         SystemTrayHelper.setShutdownListener(this);
 
-        Storj.setConfigDirectory(StorjUtil.getStorjConfigDir());
-        Storj.setDownloadDirectory(Utils.getSyncDir());
+        storj = new Storj();
+        storj.setConfigDirectory(StorjUtil.getStorjConfigDir().toFile());
+        storj.setDownloadDirectory(Utils.getSyncDir().toFile());
 
         if (!checkAndCreateSyncDir()) {
             System.exit(1);
@@ -182,7 +188,6 @@ public class App implements ShutdownListener {
     private Bucket checkAndCreateCloudBucket() {
         System.out.print("Checking if cloud Goobox bucket exists... ");
         final Bucket[] result = { null };
-        final Storj storj = Storj.getInstance();
 
         try {
             while (result[0] == null) {
