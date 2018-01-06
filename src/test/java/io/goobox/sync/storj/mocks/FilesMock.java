@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.goobox.sync.common.Utils;
+import io.goobox.sync.storj.App;
 import mockit.Mock;
 import mockit.MockUp;
 
@@ -138,7 +138,7 @@ public class FilesMock extends MockUp<Files> {
         } else if (dir.equals(FileMock.SUB_DIR.getPath())) {
             files.add(FileMock.SUB_DIR);
             return dir;
-        } else if (dir.equals(Utils.getSyncDir())) {
+        } else if (dir.equals(App.getInstance().getSyncDir())) {
             return dir;
         }
         throw new IllegalStateException();

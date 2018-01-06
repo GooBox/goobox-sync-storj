@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import io.goobox.sync.common.Utils;
 import io.methvin.watcher.DirectoryChangeEvent;
 import io.methvin.watcher.DirectoryChangeListener;
 import io.methvin.watcher.DirectoryWatcher;
@@ -38,7 +37,7 @@ public class FileWatcher extends Thread implements DirectoryChangeListener {
     @Override
     public void run() {
         try {
-            DirectoryWatcher watcher = DirectoryWatcher.create(Utils.getSyncDir(), this);
+            DirectoryWatcher watcher = DirectoryWatcher.create(App.getInstance().getSyncDir(), this);
             watcher.watchAsync();
 
             Timer timer = new Timer();

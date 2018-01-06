@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ public class StorjUtil {
     }
 
     public static String getStorjName(Path path) {
-        String name = Utils.getSyncDir().relativize(path).toString();
+        String name = App.getInstance().getSyncDir().relativize(path).toString();
         name = name.replace('\\', '/');
         if (Files.isDirectory(path)) {
             name += "/";

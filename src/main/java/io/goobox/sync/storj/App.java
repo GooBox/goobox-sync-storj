@@ -19,7 +19,16 @@ package io.goobox.sync.storj;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.liferay.nativity.control.NativityControl;
 import com.liferay.nativity.control.NativityControlUtil;
@@ -31,6 +40,7 @@ import com.liferay.nativity.util.OSDetector;
 import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.systemtray.ShutdownListener;
 import io.goobox.sync.common.systemtray.SystemTrayHelper;
+import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
@@ -40,7 +50,11 @@ import io.storj.libstorj.Storj;
 
 public class App implements ShutdownListener {
 
+    private static final Logger logger = LoggerFactory.getLogger(App.class);
+
     private static App instance;
+
+    private Path syncDir;
 
     private Storj storj;
     private Bucket gooboxBucket;
@@ -48,8 +62,43 @@ public class App implements ShutdownListener {
     private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
 
+    public App() {
+        this.syncDir = Utils.getSyncDir();
+    }
+
+    public App(Path syncDir) {
+        this.syncDir = syncDir;
+    }
+
     public static void main(String[] args) {
-        instance = new App();
+        Options opts = new Options();
+        opts.addOption(Option.builder()
+                .longOpt("reset-db")
+                .desc("reset sync DB")
+                .build());
+        opts.addOption(Option.builder()
+                .longOpt("sync-dir")
+                .hasArg()
+                .desc("set the sync dir")
+                .build());
+
+        try {
+            CommandLine cmd = new DefaultParser().parse(opts, args);
+
+            if (cmd.hasOption("reset-db")) {
+                DB.reset();
+            }
+
+            if (cmd.hasOption("sync-dir")) {
+                instance = new App(Paths.get(cmd.getParsedOptionValue("sync-dir").toString()));
+            } else {
+                instance = new App();
+            }
+        } catch (ParseException e) {
+            logger.error("Failed to parse command line options: {}", e.getMessage());
+            System.exit(1);
+        }
+
         instance.init();
 
         NativityControl nativityControl = NativityControlUtil.getNativityControl();
@@ -75,7 +124,7 @@ public class App implements ShutdownListener {
 
         fileIconControl.enableFileIcons();
 
-        String testFilePath = Utils.getSyncDir().toString();
+        String testFilePath = instance.getSyncDir().toString();
 
         if (OSDetector.isWindows()) {
             // This id is determined when building the DLL
@@ -100,6 +149,10 @@ public class App implements ShutdownListener {
         return instance;
     }
 
+    public Path getSyncDir() {
+        return syncDir;
+    }
+
     public Storj getStorj() {
         return storj;
     }
@@ -121,12 +174,12 @@ public class App implements ShutdownListener {
     }
 
     private void init() {
-        SystemTrayHelper.setIdle();
+        SystemTrayHelper.init(syncDir);
         SystemTrayHelper.setShutdownListener(this);
 
         storj = new Storj();
         storj.setConfigDirectory(StorjUtil.getStorjConfigDir().toFile());
-        storj.setDownloadDirectory(Utils.getSyncDir().toFile());
+        storj.setDownloadDirectory(syncDir.toFile());
 
         if (!checkAndCreateSyncDir()) {
             System.exit(1);
@@ -160,7 +213,7 @@ public class App implements ShutdownListener {
 
     private boolean checkAndCreateSyncDir() {
         System.out.print("Checking if local Goobox sync folder exists... ");
-        return checkAndCreateFolder(Utils.getSyncDir());
+        return checkAndCreateFolder(getSyncDir());
     }
 
     private boolean checkAndCreateDataDir() {

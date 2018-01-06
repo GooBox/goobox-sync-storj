@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 
-import io.goobox.sync.common.Utils;
+import io.goobox.sync.storj.App;
 
 public class FileMock {
 
@@ -52,7 +52,7 @@ public class FileMock {
     }
 
     public Path getPath() {
-        return Utils.getSyncDir().resolve(relPath);
+        return App.getInstance().getSyncDir().resolve(relPath);
     }
 
     public String getName() {

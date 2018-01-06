@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.objects.ObjectFilter;
 import org.dizitart.no2.objects.ObjectRepository;
 import org.dizitart.no2.objects.filters.ObjectFilters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.StorjUtil;
@@ -32,6 +34,8 @@ import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.File;
 
 public class DB {
+
+    private static final Logger logger = LoggerFactory.getLogger(DB.class);
 
     private static Nitrite db;
 
@@ -51,11 +55,23 @@ public class DB {
     }
 
     private static Nitrite open() {
-        Path dbPath = Utils.getDataDir().resolve("sync.db");
         return Nitrite.builder()
                 .compressed()
-                .filePath(dbPath.toFile())
+                .filePath(getDBPath().toFile())
                 .openOrCreate();
+    }
+
+    public static void reset() {
+        logger.info("Resetting sync DB");
+        try {
+            Files.deleteIfExists(getDBPath());
+        } catch (IOException e) {
+            logger.error("Failed deleting DB file", e);
+        }
+    }
+
+    private static Path getDBPath() {
+        return Utils.getDataDir().resolve("sync.db");
     }
 
     public static String getName(File file) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package io.goobox.sync.storj;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.File;
 
@@ -36,7 +35,7 @@ public class CreateLocalDirTask implements Runnable {
         System.out.print("Creating local directory " + storjDir.getName() + "... ");
 
         try {
-            Path localDir = Files.createDirectories(Utils.getSyncDir().resolve(storjDir.getName()));
+            Path localDir = Files.createDirectories(App.getInstance().getSyncDir().resolve(storjDir.getName()));
             System.out.println("done");
             DB.setSynced(storjDir, localDir);
             DB.commit();
