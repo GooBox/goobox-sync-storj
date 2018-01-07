@@ -187,7 +187,7 @@ public class CheckStateTask implements Runnable {
         Deque<Path> stack = new ArrayDeque<Path>();
         List<Path> paths = new ArrayList<>();
 
-        stack.push(Utils.getSyncDir());
+        stack.push(App.getInstance().getSyncDir());
 
         while (!stack.isEmpty()) {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(stack.pop())) {

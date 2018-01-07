@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DownloadFileCallback;
@@ -42,7 +41,7 @@ public class DownloadFileTask implements Runnable {
         System.out.println("Downloading file " + file.getName() + "... ");
 
         try {
-            Files.createDirectories(Utils.getSyncDir().resolve(file.getName()).getParent());
+            Files.createDirectories(App.getInstance().getSyncDir().resolve(file.getName()).getParent());
         } catch (IOException e) {
             System.out.println("Failed creating parent directories: " + e.getMessage());
         }
@@ -68,7 +67,7 @@ public class DownloadFileTask implements Runnable {
 
             @Override
             public void onError(String fileId, String message) {
-                Path localPath = Utils.getSyncDir().resolve(file.getName());
+                Path localPath = App.getInstance().getSyncDir().resolve(file.getName());
                 try {
                     DB.setDownloadFailed(file, localPath);
                     DB.commit();

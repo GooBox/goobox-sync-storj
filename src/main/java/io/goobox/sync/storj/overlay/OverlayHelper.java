@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ import com.liferay.nativity.modules.fileicon.FileIconControlCallback;
 import com.liferay.nativity.modules.fileicon.FileIconControlUtil;
 import com.liferay.nativity.util.OSDetector;
 
-import io.goobox.sync.common.Utils;
+import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.db.DB;
 
 public class OverlayHelper implements FileIconControlCallback, ContextMenuControlCallback {
@@ -90,7 +90,7 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
     public void refresh(Path path) {
         if (fileIconControl != null && path != null) {
             String[] pathAndParents = Stream.iterate(path, p -> p.getParent())
-                    .limit(Utils.getSyncDir().relativize(path).getNameCount())
+                    .limit(App.getInstance().getSyncDir().relativize(path).getNameCount())
                     .map(Path::toString)
                     .toArray(String[]::new);
             fileIconControl.refreshIcons(pathAndParents);
@@ -98,7 +98,7 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
     }
 
     private void refresh() {
-        fileIconControl.refreshIcons(new String[] { Utils.getSyncDir().toString() });
+        fileIconControl.refreshIcons(new String[] { App.getInstance().getSyncDir().toString() });
     }
 
     private void init() {
@@ -110,10 +110,11 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
         nativityControl.connect();
 
         // Setting filter folders is required for Mac's Finder Sync plugin
-        nativityControl.setFilterFolder(Utils.getSyncDir().toString());
+        nativityControl.setFilterFolder(App.getInstance().getSyncDir().toString());
 
         // Make Goobox a system folder
-        DosFileAttributeView attr = Files.getFileAttributeView(Utils.getSyncDir(), DosFileAttributeView.class);
+        DosFileAttributeView attr = Files.getFileAttributeView(App.getInstance().getSyncDir(),
+                DosFileAttributeView.class);
         try {
             attr.setSystem(true);
         } catch (IOException e) {
@@ -131,9 +132,9 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
     @Override
     public int getIconForFile(String path) {
         Path p = Paths.get(path);
-        if (!p.startsWith(Utils.getSyncDir())) {
+        if (!p.startsWith(App.getInstance().getSyncDir())) {
             return OverlayIcon.NONE.id();
-        } else if (Utils.getSyncDir().equals(p)) {
+        } else if (App.getInstance().getSyncDir().equals(p)) {
             return globalStateIconId;
         } else {
             try {

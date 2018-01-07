@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2017-2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 
 public class DeleteLocalFileTask implements Runnable {
@@ -54,7 +53,7 @@ public class DeleteLocalFileTask implements Runnable {
 
     private void deleteParentIfEmpty() {
         Path parent = path.getParent();
-        if (!parent.equals(Utils.getSyncDir())) {
+        if (!parent.equals(App.getInstance().getSyncDir())) {
             try {
                 Files.deleteIfExists(parent);
                 DB.remove(parent);
