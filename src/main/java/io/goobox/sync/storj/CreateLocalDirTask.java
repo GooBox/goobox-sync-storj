@@ -19,10 +19,15 @@ package io.goobox.sync.storj;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.File;
 
 public class CreateLocalDirTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(CreateLocalDirTask.class);
 
     private File storjDir;
 
@@ -32,15 +37,15 @@ public class CreateLocalDirTask implements Runnable {
 
     @Override
     public void run() {
-        System.out.print("Creating local directory " + storjDir.getName() + "... ");
+        logger.info("Creating local directory {}", storjDir.getName());
 
         try {
             Path localDir = Files.createDirectories(App.getInstance().getSyncDir().resolve(storjDir.getName()));
-            System.out.println("done");
+            logger.info("Locla directory created");
             DB.setSynced(storjDir, localDir);
             DB.commit();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.error("Failed creating local directory", e);
         }
     }
 

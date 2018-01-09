@@ -21,12 +21,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DownloadFileCallback;
 import io.storj.libstorj.File;
 
 public class DownloadFileTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(DownloadFileTask.class);
 
     private Bucket bucket;
     private File file;
@@ -38,12 +43,12 @@ public class DownloadFileTask implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Downloading file " + file.getName() + "... ");
+        logger.info("Downloading file {}", file.getName());
 
         try {
             Files.createDirectories(App.getInstance().getSyncDir().resolve(file.getName()).getParent());
         } catch (IOException e) {
-            System.out.println("Failed creating parent directories: " + e.getMessage());
+            logger.error("Failed creating parent directories", e);
         }
 
         App.getInstance().getStorj().downloadFile(bucket, file, new DownloadFileCallback() {
@@ -51,7 +56,7 @@ public class DownloadFileTask implements Runnable {
             public void onProgress(String fileId, double progress, long downloadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
                         (int) (progress * 100), downloadedBytes, totalBytes);
-                System.out.println(progressMessage);
+                logger.info(progressMessage);
             }
 
             @Override
@@ -59,9 +64,9 @@ public class DownloadFileTask implements Runnable {
                 try {
                     DB.setSynced(file, Paths.get(localPath));
                     DB.commit();
-                    System.out.println("  done.");
+                    logger.info("Download completed");
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("I/O error", e);
                 }
             }
 
@@ -71,9 +76,9 @@ public class DownloadFileTask implements Runnable {
                 try {
                     DB.setDownloadFailed(file, localPath);
                     DB.commit();
-                    System.out.println("  " + message);
+                    logger.error("Download failed: {}", message);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("I/O error", e);
                 }
             }
         });

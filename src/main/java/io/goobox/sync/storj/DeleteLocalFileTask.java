@@ -21,9 +21,14 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.storj.db.DB;
 
 public class DeleteLocalFileTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(DeleteLocalFileTask.class);
 
     private Path path;
 
@@ -33,19 +38,17 @@ public class DeleteLocalFileTask implements Runnable {
 
     @Override
     public void run() {
-        System.out.printf("Deleting local %s %s...\n",
-                Files.isDirectory(path) ? "directory" : "file",
-                StorjUtil.getStorjName(path));
+        logger.info("Deleting local {}", StorjUtil.getStorjName(path));
 
         try {
             Files.deleteIfExists(path);
             DB.remove(path);
             deleteParentIfEmpty();
-            System.out.println("done");
+            logger.info("Local deletetion successful");
         } catch (DirectoryNotEmptyException e) {
             DB.remove(path);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.error("Failed deleting locally", e);
         } finally {
             DB.commit();
         }

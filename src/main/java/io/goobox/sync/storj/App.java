@@ -41,6 +41,7 @@ import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.systemtray.ShutdownListener;
 import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.goobox.sync.storj.db.DB;
+import io.goobox.sync.storj.ipc.StdinReader;
 import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
@@ -61,6 +62,7 @@ public class App implements ShutdownListener {
     private TaskQueue tasks;
     private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
+    private StdinReader stdinReader;
 
     public App() {
         this.syncDir = Utils.getSyncDir();
@@ -95,7 +97,7 @@ public class App implements ShutdownListener {
                 instance = new App();
             }
         } catch (ParseException e) {
-            logger.error("Failed to parse command line options: {}", e.getMessage());
+            logger.error("Failed to parse command line options", e);
             System.exit(1);
         }
 
@@ -178,8 +180,11 @@ public class App implements ShutdownListener {
         SystemTrayHelper.setShutdownListener(this);
 
         storj = new Storj();
-        storj.setConfigDirectory(StorjUtil.getStorjConfigDir().toFile());
+        storj.setConfigDirectory(Utils.getDataDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
+
+        stdinReader = new StdinReader();
+        stdinReader.start();
 
         if (!checkAndCreateSyncDir()) {
             System.exit(1);
@@ -212,63 +217,63 @@ public class App implements ShutdownListener {
     }
 
     private boolean checkAndCreateSyncDir() {
-        System.out.print("Checking if local Goobox sync folder exists... ");
+        logger.info("Checking if local Goobox sync folder exists");
         return checkAndCreateFolder(getSyncDir());
     }
 
     private boolean checkAndCreateDataDir() {
-        System.out.print("Checking if Goobox data folder exists... ");
+        logger.info("Checking if Goobox data folder exists");
         return checkAndCreateFolder(Utils.getDataDir());
     }
 
     private boolean checkAndCreateFolder(Path path) {
         if (Files.exists(path)) {
-            System.out.println("yes");
+            logger.info("Folder exists");
             return true;
         } else {
-            System.out.print("no. ");
+            logger.info("Folder does not exist");
             try {
                 Files.createDirectory(path);
-                System.out.println("Folder created.");
+                logger.info("Folder created");
                 return true;
             } catch (IOException e) {
-                System.out.println("Failed creating folder: " + e.getMessage());
+                logger.error("Failed creating folder", e);
                 return false;
             }
         }
     }
 
     private Bucket checkAndCreateCloudBucket() {
-        System.out.print("Checking if cloud Goobox bucket exists... ");
+        logger.info("Checking if cloud Goobox bucket exists");
         final Bucket[] result = { null };
 
-        try {
-            while (result[0] == null) {
-                final CountDownLatch latch = new CountDownLatch(1);
+        while (result[0] == null) {
+            final CountDownLatch latch = new CountDownLatch(1);
 
+            try {
                 storj.getBuckets(new GetBucketsCallback() {
                     @Override
                     public void onBucketsReceived(Bucket[] buckets) {
                         for (Bucket bucket : buckets) {
                             if ("Goobox".equals(bucket.getName())) {
                                 result[0] = bucket;
-                                System.out.println("yes");
+                                logger.info("Goobox bucket exists");
                                 latch.countDown();
                                 return;
                             }
                         }
 
-                        System.out.print("no. ");
+                        logger.info("Goobox bucket does not exist");
                         storj.createBucket("Goobox", new CreateBucketCallback() {
                             @Override
                             public void onError(String message) {
-                                System.out.println("Failed creating cloud Goobox bucket.");
+                                logger.error("Failed creating cloud Goobox bucket: {}", message);
                                 latch.countDown();
                             }
 
                             @Override
                             public void onBucketCreated(Bucket bucket) {
-                                System.out.println("Cloud Goobox bucket created.");
+                                logger.info("Cloud Goobox bucket created");
                                 result[0] = bucket;
                                 latch.countDown();
                             }
@@ -277,23 +282,25 @@ public class App implements ShutdownListener {
 
                     @Override
                     public void onError(String message) {
-                        System.out.println(message);
+                        logger.error(message);
                         latch.countDown();
                     }
                 });
+            } catch (KeysNotFoundException e) {
+                logger.error("No keys found. Waiting for keys to be imported.");
+                latch.countDown();
+            }
 
+            try {
                 latch.await();
 
                 if (result[0] == null) {
                     // error - wait 3 seconds before trying again
                     Thread.sleep(3000);
                 }
+            } catch (InterruptedException e) {
+                break;
             }
-        } catch (KeysNotFoundException e) {
-            System.out.println(
-                    "No keys found. Have your imported your keys using libstorj? Make sure you don't specify a passcode.");
-        } catch (InterruptedException e) {
-            // do nothing
         }
 
         return result[0];

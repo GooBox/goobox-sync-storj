@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,28 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.goobox.sync.storj;
+package io.goobox.sync.storj.ipc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public enum Status {
 
-public class SleepTask implements Runnable {
+    OK("ok"), ERROR("error");
 
-    private static final Logger logger = LoggerFactory.getLogger(SleepTask.class);
+    private String str;
 
-    @Override
-    public synchronized void run() {
-        logger.info("Sleeping for 1 minute");
-        try {
-            wait(60000);
-        } catch (InterruptedException e) {
-            // nothing to do
-        }
+    private Status(String str) {
+        this.str = str;
     }
 
-    public synchronized void interrupt() {
-        logger.info("Sleep interrupted");
-        notify();
+    @Override
+    public String toString() {
+        return str;
     }
 
 }
