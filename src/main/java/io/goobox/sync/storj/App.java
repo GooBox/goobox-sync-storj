@@ -180,7 +180,7 @@ public class App implements ShutdownListener {
         SystemTrayHelper.setShutdownListener(this);
 
         storj = new Storj();
-        storj.setConfigDirectory(StorjUtil.getStorjConfigDir().toFile());
+        storj.setConfigDirectory(Utils.getDataDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
 
         stdinReader = new StdinReader();
@@ -247,10 +247,10 @@ public class App implements ShutdownListener {
         logger.info("Checking if cloud Goobox bucket exists");
         final Bucket[] result = { null };
 
-        try {
-            while (result[0] == null) {
-                final CountDownLatch latch = new CountDownLatch(1);
+        while (result[0] == null) {
+            final CountDownLatch latch = new CountDownLatch(1);
 
+            try {
                 storj.getBuckets(new GetBucketsCallback() {
                     @Override
                     public void onBucketsReceived(Bucket[] buckets) {
@@ -286,19 +286,21 @@ public class App implements ShutdownListener {
                         latch.countDown();
                     }
                 });
+            } catch (KeysNotFoundException e) {
+                logger.error("No keys found. Waiting for keys to be imported.");
+                latch.countDown();
+            }
 
+            try {
                 latch.await();
 
                 if (result[0] == null) {
                     // error - wait 3 seconds before trying again
                     Thread.sleep(3000);
                 }
+            } catch (InterruptedException e) {
+                break;
             }
-        } catch (KeysNotFoundException e) {
-            logger.error(
-                    "No keys found. Have your imported your keys using libstorj? Make sure you don't specify a passcode.");
-        } catch (InterruptedException e) {
-            // do nothing
         }
 
         return result[0];

@@ -23,13 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import io.goobox.sync.common.Utils;
-
 public class StorjUtil {
-
-    public static Path getStorjConfigDir() {
-        return Utils.getHomeDir().resolve(".storj");
-    }
 
     public static long getTime(String storjTimestamp) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
