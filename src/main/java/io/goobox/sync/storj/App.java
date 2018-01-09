@@ -41,6 +41,7 @@ import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.systemtray.ShutdownListener;
 import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.goobox.sync.storj.db.DB;
+import io.goobox.sync.storj.ipc.StdinReader;
 import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
@@ -61,6 +62,7 @@ public class App implements ShutdownListener {
     private TaskQueue tasks;
     private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
+    private StdinReader stdinReader;
 
     public App() {
         this.syncDir = Utils.getSyncDir();
@@ -180,6 +182,9 @@ public class App implements ShutdownListener {
         storj = new Storj();
         storj.setConfigDirectory(StorjUtil.getStorjConfigDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
+
+        stdinReader = new StdinReader();
+        stdinReader.start();
 
         if (!checkAndCreateSyncDir()) {
             System.exit(1);
