@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.goobox.sync.storj.db.DB;
@@ -37,6 +40,8 @@ import io.storj.libstorj.File;
 import io.storj.libstorj.ListFilesCallback;
 
 public class CheckStateTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(CheckStateTask.class);
 
     private Bucket gooboxBucket;
     private TaskQueue tasks;
@@ -50,11 +55,11 @@ public class CheckStateTask implements Runnable {
     public void run() {
         // check if there are local file operations in progress
         if (App.getInstance().getFileWatcher().isInProgress()) {
-            System.out.println("Skip checking for changes - local file operations in progress...");
+            logger.info("Skip checking for changes - local file operations in progress");
             return;
         }
 
-        System.out.println("Checking for changes...");
+        logger.info("Checking for changes");
         SystemTrayHelper.setSynchronizing();
         OverlayHelper.getInstance().setSynchronizing();
 
@@ -77,7 +82,7 @@ public class CheckStateTask implements Runnable {
 
             @Override
             public void onError(String message) {
-                System.out.println("  " + message);
+                logger.error(message);
                 // Try again
                 tasks.add(CheckStateTask.this);
             }
@@ -135,7 +140,7 @@ public class CheckStateTask implements Runnable {
                             }
                         }
                     } catch (ParseException e) {
-                        e.printStackTrace();
+                        logger.error("Cannot parse timestamp", e);
                     }
                 }
 
@@ -144,7 +149,7 @@ public class CheckStateTask implements Runnable {
                     localPaths.remove(localPath);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("I/O error", e);
             }
         }
 
@@ -169,7 +174,7 @@ public class CheckStateTask implements Runnable {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("I/O error", e);
             }
         }
     }
@@ -198,7 +203,7 @@ public class CheckStateTask implements Runnable {
                     paths.add(path);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("I/O error", e);
             }
         }
 

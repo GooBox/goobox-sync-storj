@@ -25,11 +25,16 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.methvin.watcher.DirectoryChangeEvent;
 import io.methvin.watcher.DirectoryChangeListener;
 import io.methvin.watcher.DirectoryWatcher;
 
 public class FileWatcher extends Thread implements DirectoryChangeListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileWatcher.class);
     
     private long lastEventTime;
     private Map<Path, Long> copyInProgress = new HashMap<>();
@@ -78,7 +83,7 @@ public class FileWatcher extends Thread implements DirectoryChangeListener {
                         if (copyInProgress.isEmpty()) {
                             // last file event was more than 3 seconds ago - fire a sync check
                             lastEventTime = 0;
-                            System.out.println("3 seconds after the last file event");
+                            logger.info("3 seconds after the last file event");
                             App.getInstance().getTaskQueue().add(new CheckStateTask());
                             App.getInstance().getTaskExecutor().interruptSleeping();
                         }
@@ -86,8 +91,7 @@ public class FileWatcher extends Thread implements DirectoryChangeListener {
                 }
             }, 3000, 3000);
         } catch (IOException e) {
-            System.out.println("File watcher error: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("File watcher error", e);
         }
     }
 
@@ -95,11 +99,11 @@ public class FileWatcher extends Thread implements DirectoryChangeListener {
     public synchronized void onEvent(final DirectoryChangeEvent event) {
         lastEventTime = System.currentTimeMillis();
 
+        logger.debug("{} {} {} count: {}", lastEventTime, event.eventType(), event.path(), event.count());
+
         switch (event.eventType()) {
         case CREATE:
         case MODIFY:
-            // TODO System.out.println(lastEventTime + " CREATE " + event.path() + "
-            // count: " + event.count());
             try {
                 copyInProgress.put(event.path(), Files.size(event.path()));
             } catch (IOException e) {
@@ -108,13 +112,9 @@ public class FileWatcher extends Thread implements DirectoryChangeListener {
             }
             break;
         case DELETE:
-            // TODO System.out.println(lastEventTime + " DELETE " + event.path() + " count:
-            // " + event.count());
             copyInProgress.remove(event.path());
             break;
         case OVERFLOW:
-            // TODO System.out.println(lastEventTime + " OVERFLOW " + event.path() + "
-            // count: " + event.count());
             break;
         }
     }

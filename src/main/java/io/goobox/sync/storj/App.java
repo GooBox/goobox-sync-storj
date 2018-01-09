@@ -97,7 +97,7 @@ public class App implements ShutdownListener {
                 instance = new App();
             }
         } catch (ParseException e) {
-            logger.error("Failed to parse command line options: {}", e.getMessage());
+            logger.error("Failed to parse command line options", e);
             System.exit(1);
         }
 
@@ -217,34 +217,34 @@ public class App implements ShutdownListener {
     }
 
     private boolean checkAndCreateSyncDir() {
-        System.out.print("Checking if local Goobox sync folder exists... ");
+        logger.info("Checking if local Goobox sync folder exists");
         return checkAndCreateFolder(getSyncDir());
     }
 
     private boolean checkAndCreateDataDir() {
-        System.out.print("Checking if Goobox data folder exists... ");
+        logger.info("Checking if Goobox data folder exists");
         return checkAndCreateFolder(Utils.getDataDir());
     }
 
     private boolean checkAndCreateFolder(Path path) {
         if (Files.exists(path)) {
-            System.out.println("yes");
+            logger.info("Folder exists");
             return true;
         } else {
-            System.out.print("no. ");
+            logger.info("Folder does not exist");
             try {
                 Files.createDirectory(path);
-                System.out.println("Folder created.");
+                logger.info("Folder created");
                 return true;
             } catch (IOException e) {
-                System.out.println("Failed creating folder: " + e.getMessage());
+                logger.error("Failed creating folder", e);
                 return false;
             }
         }
     }
 
     private Bucket checkAndCreateCloudBucket() {
-        System.out.print("Checking if cloud Goobox bucket exists... ");
+        logger.info("Checking if cloud Goobox bucket exists");
         final Bucket[] result = { null };
 
         try {
@@ -257,23 +257,23 @@ public class App implements ShutdownListener {
                         for (Bucket bucket : buckets) {
                             if ("Goobox".equals(bucket.getName())) {
                                 result[0] = bucket;
-                                System.out.println("yes");
+                                logger.info("Goobox bucket exists");
                                 latch.countDown();
                                 return;
                             }
                         }
 
-                        System.out.print("no. ");
+                        logger.info("Goobox bucket does not exist");
                         storj.createBucket("Goobox", new CreateBucketCallback() {
                             @Override
                             public void onError(String message) {
-                                System.out.println("Failed creating cloud Goobox bucket.");
+                                logger.error("Failed creating cloud Goobox bucket: {}", message);
                                 latch.countDown();
                             }
 
                             @Override
                             public void onBucketCreated(Bucket bucket) {
-                                System.out.println("Cloud Goobox bucket created.");
+                                logger.info("Cloud Goobox bucket created");
                                 result[0] = bucket;
                                 latch.countDown();
                             }
@@ -282,7 +282,7 @@ public class App implements ShutdownListener {
 
                     @Override
                     public void onError(String message) {
-                        System.out.println(message);
+                        logger.error(message);
                         latch.countDown();
                     }
                 });
@@ -295,7 +295,7 @@ public class App implements ShutdownListener {
                 }
             }
         } catch (KeysNotFoundException e) {
-            System.out.println(
+            logger.error(
                     "No keys found. Have your imported your keys using libstorj? Make sure you don't specify a passcode.");
         } catch (InterruptedException e) {
             // do nothing

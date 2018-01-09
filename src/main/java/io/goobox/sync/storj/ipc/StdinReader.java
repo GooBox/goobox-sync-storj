@@ -34,7 +34,7 @@ public class StdinReader extends Thread {
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
                 String input = scanner.nextLine();
-                logger.debug("Command input received: " + input);
+                logger.debug("Command input received: {}", input);
 
                 CommandResult result = null;
                 try {
@@ -50,7 +50,7 @@ public class StdinReader extends Thread {
 
                 if (result != null) {
                     String output = gson.toJson(result);
-                    logger.debug("Command result sent: " + output);
+                    logger.debug("Command result sent: {}", output);
                     System.out.println(output);
                 }
             }

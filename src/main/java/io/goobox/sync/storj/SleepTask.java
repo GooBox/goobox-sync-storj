@@ -16,11 +16,16 @@
  */
 package io.goobox.sync.storj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SleepTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(SleepTask.class);
 
     @Override
     public synchronized void run() {
-        System.out.println("Sleeping for 1 minute...");
+        logger.info("Sleeping for 1 minute");
         try {
             wait(60000);
         } catch (InterruptedException e) {
@@ -29,7 +34,7 @@ public class SleepTask implements Runnable {
     }
 
     public synchronized void interrupt() {
-        System.out.println("Sleep interrupted");
+        logger.info("Sleep interrupted");
         notify();
     }
 

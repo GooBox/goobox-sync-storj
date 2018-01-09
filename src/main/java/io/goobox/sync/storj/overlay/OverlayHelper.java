@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.liferay.nativity.control.NativityControl;
 import com.liferay.nativity.control.NativityControlUtil;
 import com.liferay.nativity.modules.contextmenu.ContextMenuControlCallback;
@@ -40,6 +43,8 @@ import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.db.DB;
 
 public class OverlayHelper implements FileIconControlCallback, ContextMenuControlCallback {
+
+    private static final Logger logger = LoggerFactory.getLogger(OverlayHelper.class);
 
     private NativityControl nativityControl;
     private FileIconControl fileIconControl;
@@ -118,7 +123,7 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
         try {
             attr.setSystem(true);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Cannot set system folder", e);
         }
 
         fileIconControl = FileIconControlUtil.getFileIconControl(nativityControl, this);
@@ -144,7 +149,7 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
                         .map(OverlayIcon::id)
                         .reduce(OverlayIcon.NONE.id(), Integer::max);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Failed walking the file tree", e);
             }
         }
         return 0;
@@ -157,7 +162,7 @@ public class OverlayHelper implements FileIconControlCallback, ContextMenuContro
         ContextMenuAction contextMenuAction = new ContextMenuAction() {
             @Override
             public void onSelection(String[] paths) {
-                System.out.println("Context menu selection: " + String.join("; ", paths));
+                logger.info("Context menu selection: {}", String.join("; ", paths));
             }
         };
 

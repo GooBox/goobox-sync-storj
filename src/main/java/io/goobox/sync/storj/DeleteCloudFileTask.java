@@ -16,12 +16,17 @@
  */
 package io.goobox.sync.storj;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.File;
 
 public class DeleteCloudFileTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(DeleteCloudFileTask.class);
 
     private Bucket bucket;
     private File file;
@@ -33,19 +38,19 @@ public class DeleteCloudFileTask implements Runnable {
 
     @Override
     public void run() {
-        System.out.printf("Deleting cloud %s %s...\n", file.isDirectory() ? "directory" : "file", file.getName());
+        logger.info("Deleting cloud {}", file.getName());
 
         App.getInstance().getStorj().deleteFile(bucket, file, new DeleteFileCallback() {
             @Override
             public void onFileDeleted() {
-                System.out.println("done");
+                logger.info("Cloud deletion successful");
                 DB.remove(file);
                 DB.commit();
             }
 
             @Override
             public void onError(String message) {
-                System.out.println("failed. " + message);
+                logger.error("Failed deleting on cloud: {}", message);
             }
         });
     }

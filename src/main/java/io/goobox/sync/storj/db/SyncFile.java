@@ -23,12 +23,16 @@ import java.nio.file.Path;
 import java.text.ParseException;
 
 import org.dizitart.no2.objects.Id;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.goobox.sync.storj.StorjUtil;
 import io.storj.libstorj.File;
 
 @SuppressWarnings("serial")
 public class SyncFile implements Serializable {
+
+    private static final Logger logger = LoggerFactory.getLogger(SyncFile.class);
 
     @Id
     private String name;
@@ -106,7 +110,7 @@ public class SyncFile implements Serializable {
         try {
             setStorjCreatedTime(StorjUtil.getTime(file.getCreated()));
         } catch (ParseException e) {
-            e.printStackTrace();
+            logger.error("Cannot parse timestamp", e);
         }
         setStorjSize(file.getSize());
     }

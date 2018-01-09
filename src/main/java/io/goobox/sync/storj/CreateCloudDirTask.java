@@ -21,6 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.File;
@@ -28,6 +31,8 @@ import io.storj.libstorj.ListFilesCallback;
 import io.storj.libstorj.UploadFileCallback;
 
 public class CreateCloudDirTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(CreateCloudDirTask.class);
 
     private Bucket bucket;
     private Path path;
@@ -48,14 +53,14 @@ public class CreateCloudDirTask implements Runnable {
             } else {
                 final Path tmp = createTempDirFile();
 
-                System.out.println("Creating cloud directory " + dirName + "... ");
+                logger.info("Creating cloud directory {}", dirName);
 
                 App.getInstance().getStorj().uploadFile(bucket, dirName, tmp.toString(), new UploadFileCallback() {
                     @Override
                     public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                         String progressMessage = String.format("  %3d%% %15d/%d bytes",
                                 (int) (progress * 100), uploadedBytes, totalBytes);
-                        System.out.println(progressMessage);
+                        logger.info(progressMessage);
                     }
 
                     @Override
@@ -66,7 +71,7 @@ public class CreateCloudDirTask implements Runnable {
                             DB.setSynced(file, path);
                             DB.commit();
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.error("I/O error", e);
                         }
                     }
 
@@ -78,15 +83,15 @@ public class CreateCloudDirTask implements Runnable {
                             DB.setUploadFailed(path);
                             DB.commit();
 
-                            System.out.println("  " + message);
+                            logger.error(message);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.error("I/O error", e);
                         }
                     }
                 });
             }
         } catch (IOException e) {
-            System.out.println("Failed creating temp file: " + e.getMessage());
+            logger.error("Failed creating temp file", e);
         } catch (InterruptedException e) {
             // interrupted - stop execution
             return;
@@ -114,8 +119,8 @@ public class CreateCloudDirTask implements Runnable {
 
                 @Override
                 public void onError(String message) {
-                    System.out.printf("Error checking if directory with name %s exists: %s. Trying again...\n",
-                            dirName, message);
+                    logger.error("Error checking if directory with name {} exists: {}. Trying again.", dirName,
+                            message);
                     latch.countDown();
                 }
             });
@@ -136,7 +141,7 @@ public class CreateCloudDirTask implements Runnable {
         try {
             Files.deleteIfExists(tmp);
         } catch (IOException e) {
-            System.out.println("Failed deleting temp file: " + e.getMessage());
+            logger.error("Failed deleting temp file", e);
         }
     }
 

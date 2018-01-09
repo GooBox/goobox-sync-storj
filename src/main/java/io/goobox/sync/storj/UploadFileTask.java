@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
@@ -28,6 +31,8 @@ import io.storj.libstorj.ListFilesCallback;
 import io.storj.libstorj.UploadFileCallback;
 
 public class UploadFileTask implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(UploadFileTask.class);
 
     private Bucket bucket;
     private Path path;
@@ -48,14 +53,14 @@ public class UploadFileTask implements Runnable {
             return;
         }
 
-        System.out.println("Uploading file " + fileName + "... ");
+        logger.info("Uploading file {}", fileName);
 
         App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
             @Override
             public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                 String progressMessage = String.format("  %3d%% %15d/%d bytes",
                         (int) (progress * 100), uploadedBytes, totalBytes);
-                System.out.println(progressMessage);
+                logger.info(progressMessage);
             }
 
             @Override
@@ -64,7 +69,7 @@ public class UploadFileTask implements Runnable {
                     DB.setSynced(file, path);
                     DB.commit();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("I/O error", e);
                 }
             }
 
@@ -73,9 +78,9 @@ public class UploadFileTask implements Runnable {
                 try {
                     DB.setUploadFailed(path);
                     DB.commit();
-                    System.out.println("  " + message);
+                    logger.error("Upload failed: {}", message);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("I/O error", e);
                 }
             }
         });
@@ -101,19 +106,19 @@ public class UploadFileTask implements Runnable {
                         repeat[0] = false;
                         latch.countDown();
                     } else {
-                        System.out.print("Deleting old version of " + fileName + " on the cloud... ");
+                        logger.info("Deleting old version of {} on the cloud", fileName);
 
                         App.getInstance().getStorj().deleteFile(bucket, storjFile, new DeleteFileCallback() {
                             @Override
                             public void onFileDeleted() {
-                                System.out.println("done");
+                                logger.info("Old version deleted");
                                 repeat[0] = false;
                                 latch.countDown();
                             }
 
                             @Override
                             public void onError(String message) {
-                                System.out.println(message + ". Trying again...");
+                                logger.error("Failed deleting old version: {}. Trying again.", message);
                                 latch.countDown();
                             }
                         });
@@ -122,8 +127,7 @@ public class UploadFileTask implements Runnable {
 
                 @Override
                 public void onError(String message) {
-                    System.out.println(String.format("Error checking if file with name %s exists: %s. Trying again...",
-                            fileName, message));
+                    logger.error("Error checking if file with name {} exists: {}. Trying again.", fileName, message);
                     latch.countDown();
                 }
             });
