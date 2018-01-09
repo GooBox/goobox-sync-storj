@@ -68,6 +68,7 @@ public class UploadFileTask implements Runnable {
                 try {
                     DB.setSynced(file, path);
                     DB.commit();
+                    logger.info("Upload completed");
                 } catch (IOException e) {
                     logger.error("I/O error", e);
                 }
