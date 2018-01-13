@@ -37,18 +37,6 @@ public class LoginRequest {
         this.encryptionKey = encryptionKey;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getEncryptionKey() {
-        return encryptionKey;
-    }
-
     public CommandResult execute() {
         if (email == null) {
             String msg = "Missing email argument";

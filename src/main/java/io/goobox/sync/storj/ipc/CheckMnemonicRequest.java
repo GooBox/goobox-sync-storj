@@ -16,30 +16,36 @@
  */
 package io.goobox.sync.storj.ipc;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Command {
+import io.storj.libstorj.Storj;
 
-    private static final Logger logger = LoggerFactory.getLogger(Command.class);
+public class CheckMnemonicRequest {
 
-    private String method;
-    private Map<String, String> args;
+    private static final Logger logger = LoggerFactory.getLogger(CheckMnemonicRequest.class);
+
+    private String encryptionKey;
+
+    public CheckMnemonicRequest(String encryptionKey) {
+        this.encryptionKey = encryptionKey;
+    }
 
     public CommandResult execute() {
-        if ("login".equals(method)) {
-            return new LoginRequest(args.get("email"), args.get("password"), args.get("encryptionKey")).execute();
-        } else if ("createAccount".equals(method)) {
-            return new CreateAccountRequest(args.get("email"), args.get("password")).execute();
-        } else if ("checkMnemonic".equals(method)) {
-            return new CheckMnemonicRequest(args.get("encryptionKey")).execute();
-        } else {
-            String msg = "Invalid command method: " + method;
+        if (encryptionKey == null) {
+            String msg = "Missing encryptionKey argument";
             logger.error(msg);
             return new CommandResult(Status.ERROR, msg);
         }
+
+        boolean result = Storj.checkMnemonic(encryptionKey);
+        if (!result) {
+            String msg = "Invalid encryption key";
+            logger.error(msg);
+            return new CommandResult(Status.ERROR, msg);
+        }
+
+        return new CommandResult(Status.OK, null);
     }
 
 }
