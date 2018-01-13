@@ -24,13 +24,14 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-public class StdinReader extends Thread {
+public class IpcExecutor extends Thread {
 
-    private static final Logger logger = LoggerFactory.getLogger(StdinReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(IpcExecutor.class);
+
+    private Gson gson = new Gson();
 
     @Override
     public void run() {
-        Gson gson = new Gson();
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
                 String input = scanner.nextLine();
@@ -48,12 +49,38 @@ public class StdinReader extends Thread {
                     result = new CommandResult(Status.ERROR, msg);
                 }
 
-                if (result != null) {
-                    String output = gson.toJson(result);
-                    logger.debug("Command result sent: {}", output);
-                    System.out.println(output);
-                }
+                sendResult(result);
             }
+        }
+    }
+
+    private void sendResult(CommandResult result) {
+        send(result, "Command result sent");
+    }
+
+    public void sendIdleEvent() {
+        sendEvent(new SyncStateEvent("idle"));
+    }
+
+    public void sendSyncEvent() {
+        sendEvent(new SyncStateEvent("synchronizing"));
+    }
+
+    private void sendEvent(Event event) {
+        send(event, "Event sent");
+    }
+
+    private void send(Object obj, String debugMessage) {
+        if (obj != null) {
+            String output = gson.toJson(obj);
+            logger.debug("{}: {}", debugMessage, output);
+            send(output);
+        }
+    }
+
+    private void send(String msg) {
+        synchronized (this) {
+            System.out.println(msg);
         }
     }
 
