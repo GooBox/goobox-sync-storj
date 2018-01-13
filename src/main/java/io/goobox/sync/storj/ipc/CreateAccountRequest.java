@@ -37,14 +37,6 @@ public class CreateAccountRequest {
         this.password = password;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
     public CommandResult execute() {
         if (email == null) {
             String msg = "Missing email argument";
