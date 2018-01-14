@@ -211,7 +211,7 @@ public class App implements ShutdownListener {
 
     @Override
     public void shutdown() {
-        // TODO graceful shutdown
+        logger.info("Shutting down");
         OverlayHelper.getInstance().shutdown();
         System.exit(0);
     }
