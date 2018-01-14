@@ -16,13 +16,14 @@
  */
 package io.goobox.sync.storj.ipc;
 
-public class SyncStateEvent extends Event {
+import java.util.Collections;
 
-    private String newState;
+public class SyncStateEvent extends Command {
 
     public SyncStateEvent(String newState) {
-        super("syncState");
-        this.newState = newState;
+        super();
+        method = "syncState";
+        args = Collections.singletonMap("newState", newState);
     }
 
 }
