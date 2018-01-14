@@ -25,8 +25,8 @@ public class Command {
 
     private static final Logger logger = LoggerFactory.getLogger(Command.class);
 
-    private String method;
-    private Map<String, String> args;
+    protected String method;
+    protected Map<String, String> args;
 
     public CommandResult execute() {
         if ("login".equals(method)) {

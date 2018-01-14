@@ -66,8 +66,8 @@ public class IpcExecutor extends Thread {
         sendEvent(new SyncStateEvent("synchronizing"));
     }
 
-    private void sendEvent(Event event) {
-        send(event, "Event sent");
+    private void sendEvent(Command cmd) {
+        send(cmd, "Command sent");
     }
 
     private void send(Object obj, String debugMessage) {
