@@ -20,9 +20,6 @@ import io.goobox.sync.storj.App;
 
 public class QuitCommand {
 
-    public QuitCommand() {
-    }
-
     public CommandResult execute() {
         App.getInstance().shutdown();
         return null;
