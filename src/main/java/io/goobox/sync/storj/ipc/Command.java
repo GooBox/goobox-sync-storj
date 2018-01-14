@@ -35,6 +35,8 @@ public class Command {
             return new CreateAccountRequest(args.get("email"), args.get("password")).execute();
         } else if ("checkMnemonic".equals(method)) {
             return new CheckMnemonicRequest(args.get("encryptionKey")).execute();
+        } else if ("quit".equals(method)) {
+            return new QuitCommand().execute();
         } else {
             String msg = "Invalid command method: " + method;
             logger.error(msg);
