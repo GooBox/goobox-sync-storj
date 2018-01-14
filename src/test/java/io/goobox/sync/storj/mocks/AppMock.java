@@ -19,6 +19,7 @@ package io.goobox.sync.storj.mocks;
 import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.FileWatcher;
 import io.goobox.sync.storj.TaskQueue;
+import io.goobox.sync.storj.ipc.IpcExecutor;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.Storj;
 import mockit.Mock;
@@ -28,6 +29,7 @@ public class AppMock extends MockUp<App> {
 
     private App instance = new App();
     private Storj storj;
+    private IpcExecutor ipcExecutor = new IpcExecutor();
     private TaskQueue tasks = new TaskQueue();
     private FileWatcher fileWatcher = new FileWatcher();
 
@@ -47,6 +49,11 @@ public class AppMock extends MockUp<App> {
     @Mock
     public Bucket getGooboxBucket() {
         return null;
+    }
+
+    @Mock
+    public IpcExecutor getIpcExecutor() {
+        return ipcExecutor;
     }
 
     @Mock

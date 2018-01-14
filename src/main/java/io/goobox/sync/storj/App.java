@@ -39,9 +39,8 @@ import com.liferay.nativity.util.OSDetector;
 
 import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.systemtray.ShutdownListener;
-import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.goobox.sync.storj.db.DB;
-import io.goobox.sync.storj.ipc.StdinReader;
+import io.goobox.sync.storj.ipc.IpcExecutor;
 import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
@@ -62,7 +61,7 @@ public class App implements ShutdownListener {
     private TaskQueue tasks;
     private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
-    private StdinReader stdinReader;
+    private IpcExecutor ipcExecutor;
 
     public App() {
         this.syncDir = Utils.getSyncDir();
@@ -163,6 +162,10 @@ public class App implements ShutdownListener {
         return gooboxBucket;
     }
 
+    public IpcExecutor getIpcExecutor() {
+        return ipcExecutor;
+    }
+
     public TaskQueue getTaskQueue() {
         return tasks;
     }
@@ -176,15 +179,12 @@ public class App implements ShutdownListener {
     }
 
     private void init() {
-        SystemTrayHelper.init(syncDir);
-        SystemTrayHelper.setShutdownListener(this);
-
         storj = new Storj();
         storj.setConfigDirectory(Utils.getDataDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
 
-        stdinReader = new StdinReader();
-        stdinReader.start();
+        ipcExecutor = new IpcExecutor();
+        ipcExecutor.start();
 
         if (!checkAndCreateSyncDir()) {
             System.exit(1);

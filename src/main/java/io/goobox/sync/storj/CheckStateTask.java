@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.goobox.sync.common.Utils;
-import io.goobox.sync.common.systemtray.SystemTrayHelper;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
@@ -60,7 +59,7 @@ public class CheckStateTask implements Runnable {
         }
 
         logger.info("Checking for changes");
-        SystemTrayHelper.setSynchronizing();
+        App.getInstance().getIpcExecutor().sendSyncEvent();
         OverlayHelper.getInstance().setSynchronizing();
 
         App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
@@ -73,7 +72,7 @@ public class CheckStateTask implements Runnable {
                 if (tasks.isEmpty()) {
                     // Sleep some time to avoid overloading the bridge
                     tasks.add(new SleepTask());
-                    SystemTrayHelper.setIdle();
+                    App.getInstance().getIpcExecutor().sendIdleEvent();
                     OverlayHelper.getInstance().setOK();
                 }
                 // Add itself to the queueAdd itself to the queue
