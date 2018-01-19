@@ -78,6 +78,10 @@ public class App implements ShutdownListener {
                 .desc("reset sync DB")
                 .build());
         opts.addOption(Option.builder()
+                .longOpt("reset-auth-file")
+                .desc("reset auth file")
+                .build());
+        opts.addOption(Option.builder()
                 .longOpt("sync-dir")
                 .hasArg()
                 .desc("set the sync dir")
@@ -90,17 +94,19 @@ public class App implements ShutdownListener {
                 DB.reset();
             }
 
+            boolean resetAuthFile = cmd.hasOption("reset-auth-file");
+
             if (cmd.hasOption("sync-dir")) {
                 instance = new App(Paths.get(cmd.getParsedOptionValue("sync-dir").toString()));
             } else {
                 instance = new App();
             }
+
+            instance.init(resetAuthFile);
         } catch (ParseException e) {
             logger.error("Failed to parse command line options", e);
             System.exit(1);
         }
-
-        instance.init();
 
         NativityControl nativityControl = NativityControlUtil.getNativityControl();
         nativityControl.connect();
@@ -178,10 +184,14 @@ public class App implements ShutdownListener {
         return fileWatcher;
     }
 
-    private void init() {
+    private void init(boolean resetAuthFile) {
         storj = new Storj();
         storj.setConfigDirectory(Utils.getDataDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
+
+        if (resetAuthFile) {
+            storj.deleteKeys();
+        }
 
         ipcExecutor = new IpcExecutor();
         ipcExecutor.start();
