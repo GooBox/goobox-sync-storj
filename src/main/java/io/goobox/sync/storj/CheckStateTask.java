@@ -33,7 +33,6 @@ import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
-import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.File;
 import io.storj.libstorj.ListFilesCallback;
@@ -60,7 +59,7 @@ public class CheckStateTask implements Runnable {
 
         logger.info("Checking for changes");
         App.getInstance().getIpcExecutor().sendSyncEvent();
-        OverlayHelper.getInstance().setSynchronizing();
+        App.getInstance().getOverlayHelper().setSynchronizing();
 
         App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
@@ -73,7 +72,7 @@ public class CheckStateTask implements Runnable {
                     // Sleep some time to avoid overloading the bridge
                     tasks.add(new SleepTask());
                     App.getInstance().getIpcExecutor().sendIdleEvent();
-                    OverlayHelper.getInstance().setOK();
+                    App.getInstance().getOverlayHelper().setOK();
                 }
                 // Add itself to the queueAdd itself to the queue
                 tasks.add(CheckStateTask.this);

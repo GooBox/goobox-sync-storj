@@ -19,7 +19,6 @@ package io.goobox.sync.storj;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.cli.CommandLine;
@@ -30,18 +29,12 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.liferay.nativity.control.NativityControl;
-import com.liferay.nativity.control.NativityControlUtil;
-import com.liferay.nativity.modules.fileicon.FileIconControl;
-import com.liferay.nativity.modules.fileicon.FileIconControlCallback;
-import com.liferay.nativity.modules.fileicon.FileIconControlUtil;
-import com.liferay.nativity.util.OSDetector;
-
+import io.goobox.sync.common.ShutdownListener;
 import io.goobox.sync.common.Utils;
-import io.goobox.sync.common.systemtray.ShutdownListener;
+import io.goobox.sync.common.overlay.OverlayHelper;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.ipc.IpcExecutor;
-import io.goobox.sync.storj.overlay.OverlayHelper;
+import io.goobox.sync.storj.overlay.StorjOverlayIconProvider;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.CreateBucketCallback;
 import io.storj.libstorj.GetBucketsCallback;
@@ -62,6 +55,7 @@ public class App implements ShutdownListener {
     private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
     private IpcExecutor ipcExecutor;
+    private OverlayHelper overlayHelper;
 
     public App() {
         this.syncDir = Utils.getSyncDir();
@@ -97,7 +91,14 @@ public class App implements ShutdownListener {
             boolean resetAuthFile = cmd.hasOption("reset-auth-file");
 
             if (cmd.hasOption("sync-dir")) {
-                instance = new App(Paths.get(cmd.getParsedOptionValue("sync-dir").toString()));
+                String syncDirParam = (String) cmd.getParsedOptionValue("sync-dir");
+                try {
+                    Path syncDir = new java.io.File(syncDirParam).getCanonicalFile().toPath();
+                    instance = new App(syncDir);
+                } catch (IOException e) {
+                    logger.error("Cannot resolve sync dir path: " + syncDirParam);
+                    System.exit(1);
+                }
             } else {
                 instance = new App();
             }
@@ -107,49 +108,6 @@ public class App implements ShutdownListener {
             logger.error("Failed to parse command line options", e);
             System.exit(1);
         }
-
-        NativityControl nativityControl = NativityControlUtil.getNativityControl();
-        nativityControl.connect();
-
-        // Setting filter folders is required for Mac's Finder Sync plugin
-        // nativityControl.setFilterFolder(Utils.getSyncDir().toString());
-
-        /* File Icons */
-
-        int testIconId = 1;
-
-        // FileIconControlCallback used by Windows and Mac
-        FileIconControlCallback fileIconControlCallback = new FileIconControlCallback() {
-            @Override
-            public int getIconForFile(String path) {
-                return 1; // testIconId;
-            }
-        };
-
-        FileIconControl fileIconControl = FileIconControlUtil.getFileIconControl(nativityControl,
-                fileIconControlCallback);
-
-        fileIconControl.enableFileIcons();
-
-        String testFilePath = instance.getSyncDir().toString();
-
-        if (OSDetector.isWindows()) {
-            // This id is determined when building the DLL
-            testIconId = 1;
-        } else if (OSDetector.isMinimumAppleVersion(OSDetector.MAC_YOSEMITE_10_10)) {
-            // Used by Mac Finder Sync. This unique id can be set at runtime.
-            testIconId = 1;
-
-            fileIconControl.registerIconWithId("/tmp/goobox.icns",
-                    "test label", "" + testIconId);
-        } else if (OSDetector.isLinux()) {
-            // Used by Mac Injector and Linux
-            testIconId = fileIconControl.registerIcon("/tmp/git-clean.png");
-        }
-
-        // FileIconControl.setFileIcon() method only used by Linux
-        fileIconControl.setFileIcon(testFilePath, testIconId);
-        nativityControl.disconnect();
     }
 
     public static App getInstance() {
@@ -184,6 +142,10 @@ public class App implements ShutdownListener {
         return fileWatcher;
     }
 
+    public OverlayHelper getOverlayHelper() {
+        return overlayHelper;
+    }
+
     private void init(boolean resetAuthFile) {
         storj = new Storj();
         storj.setConfigDirectory(Utils.getDataDir().toFile());
@@ -208,6 +170,8 @@ public class App implements ShutdownListener {
         if (gooboxBucket == null) {
             System.exit(1);
         }
+        
+        overlayHelper = new OverlayHelper(syncDir, new StorjOverlayIconProvider());
 
         tasks = new TaskQueue();
         tasks.add(new CheckStateTask());
@@ -222,7 +186,7 @@ public class App implements ShutdownListener {
     @Override
     public void shutdown() {
         logger.info("Shutting down");
-        OverlayHelper.getInstance().shutdown();
+        overlayHelper.shutdown();
         System.exit(0);
     }
 

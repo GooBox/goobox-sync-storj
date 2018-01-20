@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.goobox.sync.common.Utils;
+import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.StorjUtil;
-import io.goobox.sync.storj.overlay.OverlayHelper;
 import io.storj.libstorj.File;
 
 public class DB {
@@ -158,7 +158,7 @@ public class DB {
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.SYNCED);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(localFile);
+        App.getInstance().getOverlayHelper().refresh(localFile);
     }
 
     public synchronized static void addForDownload(File file) {
@@ -175,7 +175,7 @@ public class DB {
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.FOR_DOWNLOAD);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(localFile);
+        App.getInstance().getOverlayHelper().refresh(localFile);
     }
 
     public synchronized static void addForUpload(Path path) throws IOException {
@@ -184,7 +184,7 @@ public class DB {
         syncFile.setLocalData(path);
         syncFile.setState(SyncState.FOR_UPLOAD);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(path);
+        App.getInstance().getOverlayHelper().refresh(path);
     }
 
     public synchronized static void addForUpload(File storjFile, Path localFile) throws IOException {
@@ -193,7 +193,7 @@ public class DB {
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.FOR_UPLOAD);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(localFile);
+        App.getInstance().getOverlayHelper().refresh(localFile);
     }
 
     public synchronized static void setDownloadFailed(File storjFile, Path localFile) throws IOException {
@@ -204,7 +204,7 @@ public class DB {
         }
         syncFile.setState(SyncState.DOWNLOAD_FAILED);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(localFile);
+        App.getInstance().getOverlayHelper().refresh(localFile);
     }
 
     public synchronized static void setUploadFailed(Path path) throws IOException {
@@ -214,7 +214,7 @@ public class DB {
         }
         syncFile.setState(SyncState.UPLOAD_FAILED);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(path);
+        App.getInstance().getOverlayHelper().refresh(path);
     }
 
     public synchronized static void setForLocalDelete(Path path) throws IOException {
@@ -222,7 +222,7 @@ public class DB {
         syncFile.setLocalData(path);
         syncFile.setState(SyncState.FOR_LOCAL_DELETE);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(path);
+        App.getInstance().getOverlayHelper().refresh(path);
     }
 
     public synchronized static void setForCloudDelete(File file) {
@@ -244,7 +244,7 @@ public class DB {
         syncFile.setLocalData(path);
         syncFile.setState(SyncState.FOR_CLOUD_CREATE_DIR);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(path);
+        App.getInstance().getOverlayHelper().refresh(path);
     }
 
     public synchronized static void setConflict(File storjFile, Path localFile) throws IOException {
@@ -253,7 +253,7 @@ public class DB {
         syncFile.setLocalData(localFile);
         syncFile.setState(SyncState.CONFLICT);
         repo().update(syncFile);
-        OverlayHelper.getInstance().refresh(localFile);
+        App.getInstance().getOverlayHelper().refresh(localFile);
     }
 
     public static void main(String[] args) {
