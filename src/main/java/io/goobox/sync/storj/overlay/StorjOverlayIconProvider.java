@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Kaloyan Raev
+ * Copyright (C) 2018 Kaloyan Raev
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,23 +16,18 @@
  */
 package io.goobox.sync.storj.overlay;
 
+import java.nio.file.Path;
+
+import io.goobox.sync.common.overlay.OverlayIcon;
+import io.goobox.sync.common.overlay.OverlayIconProvider;
+import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 
-public enum OverlayIcon {
+public class StorjOverlayIconProvider implements OverlayIconProvider {
 
-    NONE(0), OK(1), SYNCING(2), WARNING(3), ERROR(4);
-
-    private int id;
-
-    private OverlayIcon(int id) {
-        this.id = id;
-    }
-
-    public int id() {
-        return id;
-    }
-
-    public static OverlayIcon from(SyncFile file) {
+    @Override
+    public OverlayIcon getIcon(Path path) {
+        SyncFile file = DB.get(path);
         if (file == null || file.getState().isPending()) {
             return OverlayIcon.SYNCING;
         } else if (file.getState().isSynced()) {

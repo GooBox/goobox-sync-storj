@@ -23,6 +23,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.goobox.sync.common.overlay.OverlayIcon;
+import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.helpers.StorjUtil;
 import io.goobox.sync.storj.mocks.AppMock;
@@ -256,7 +258,7 @@ public class OverlayHelperTest {
     }
 
     private int getIconId(FileMock file) {
-        return OverlayHelper.getInstance().getIconForFile(file.getPath().toString());
+        return App.getInstance().getOverlayHelper().getIconForFile(file.getPath().toString());
     }
 
 }
