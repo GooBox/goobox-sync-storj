@@ -20,7 +20,15 @@
     </encoder>
   </appender>
 
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>[%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
   <root level="DEBUG">
     <appender-ref ref="FILE" />
+    <appender-ref ref="STDERR"/>
   </root>
 </configuration>
