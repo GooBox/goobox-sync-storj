@@ -33,8 +33,9 @@ public class StorjUtil {
         }
 
         @Override
-        public void onError(String message) {
-            throw new IllegalStateException(message);
+        public void onError(int code, String message) {
+            String msg = String.format("%s (%d)", message, code);
+            throw new IllegalStateException(msg);
         }
 
     }

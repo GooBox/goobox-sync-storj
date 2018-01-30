@@ -240,8 +240,8 @@ public class App implements ShutdownListener {
                         logger.info("Goobox bucket does not exist");
                         storj.createBucket("Goobox", new CreateBucketCallback() {
                             @Override
-                            public void onError(String message) {
-                                logger.error("Failed creating cloud Goobox bucket: {}", message);
+                            public void onError(int code, String message) {
+                                logger.error("Failed creating cloud Goobox bucket: {} ({})", message, code);
                                 latch.countDown();
                             }
 
@@ -255,8 +255,8 @@ public class App implements ShutdownListener {
                     }
 
                     @Override
-                    public void onError(String message) {
-                        logger.error(message);
+                    public void onError(int code, String message) {
+                        logger.error("{} ({})", message, code);
                         latch.countDown();
                     }
                 });

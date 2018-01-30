@@ -89,7 +89,7 @@ public class StorjMock extends MockUp<Storj> {
                 return;
             }
         }
-        callback.onError("file not found");
+        callback.onError(Storj.HTTP_NOT_FOUND, "file not found");
     }
 
     @Mock
@@ -104,7 +104,7 @@ public class StorjMock extends MockUp<Storj> {
             filesMock.addFile(FileMock.SUB_SUB_FILE);
             callback.onComplete(file.getId(), FileMock.SUB_SUB_FILE.getPath().toString());
         } else {
-            callback.onError(file.getId(), "error downloading");
+            callback.onError(file.getId(), Storj.STORJ_BRIDGE_FILE_NOTFOUND_ERROR, "error downloading");
         }
     }
 
@@ -113,7 +113,7 @@ public class StorjMock extends MockUp<Storj> {
             throws KeysNotFoundException {
         if (FileMock.FILE_1.getPath().toString().equals(localPath)) {
             if (files.contains(FILE_1)) {
-                callback.onError(localPath, "File already exists");
+                callback.onError(localPath, Storj.STORJ_BRIDGE_BUCKET_FILE_EXISTS, "File already exists");
             } else {
                 files.add(FILE_1);
                 callback.onComplete(localPath, FILE_1);
@@ -131,7 +131,7 @@ public class StorjMock extends MockUp<Storj> {
             files.add(SUB_SUB_FILE);
             callback.onComplete(localPath, SUB_SUB_FILE);
         } else {
-            callback.onError(localPath, "error uploading");
+            callback.onError(localPath, Storj.ENOENT, "error uploading");
         }
     }
 

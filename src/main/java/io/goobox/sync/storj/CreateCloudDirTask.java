@@ -76,14 +76,14 @@ public class CreateCloudDirTask implements Runnable {
                     }
 
                     @Override
-                    public void onError(String filePath, String message) {
+                    public void onError(String filePath, int code, String message) {
                         try {
                             deleteTempDirFile(tmp);
 
                             DB.setUploadFailed(path);
                             DB.commit();
 
-                            logger.error(message);
+                            logger.error("{} ({})", message, code);
                         } catch (IOException e) {
                             logger.error("I/O error", e);
                         }
@@ -118,9 +118,9 @@ public class CreateCloudDirTask implements Runnable {
                 }
 
                 @Override
-                public void onError(String message) {
-                    logger.error("Error checking if directory with name {} exists: {}. Trying again.", dirName,
-                            message);
+                public void onError(int code, String message) {
+                    logger.error("Error checking if directory with name {} exists: {} ({}). Trying again.",
+                            dirName, message, code);
                     latch.countDown();
                 }
             });

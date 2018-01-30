@@ -59,15 +59,32 @@ public class LoginRequest {
         Storj storj = App.getInstance().getStorj();
         Keys keys = new Keys(email, password, encryptionKey);
 
-        boolean result = storj.verifyKeys(email, password);
-        if (!result) {
-            String msg = "Email and password do not match";
-            logger.error(msg);
+        try {
+            int result = storj.verifyKeys(new Keys(email, password, encryptionKey));
+            if (result != Storj.NO_ERROR) {
+                String msg;
+
+                switch (result) {
+                case Storj.HTTP_UNAUTHORIZED:
+                    msg = "Email and password do not match";
+                    break;
+                case Storj.STORJ_META_DECRYPTION_ERROR:
+                    msg = "Encryption key cannot decrypt content";
+                    break;
+                default:
+                    msg = Storj.getErrorMessage(result);
+                }
+
+                logger.error(msg);
+                return new CommandResult(Status.ERROR, msg);
+            }
+        } catch (InterruptedException e) {
+            String msg = "Login interrupted";
+            logger.error(msg, e);
             return new CommandResult(Status.ERROR, msg);
         }
 
-        result = storj.importKeys(keys, "");
-        if (!result) {
+        if (!storj.importKeys(keys, "")) {
             String msg = "Failed to write authentication file";
             logger.error(msg);
             return new CommandResult(Status.ERROR, msg);
