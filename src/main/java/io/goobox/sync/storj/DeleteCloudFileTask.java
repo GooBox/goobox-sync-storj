@@ -49,8 +49,8 @@ public class DeleteCloudFileTask implements Runnable {
             }
 
             @Override
-            public void onError(String message) {
-                logger.error("Failed deleting on cloud: {}", message);
+            public void onError(int code, String message) {
+                logger.error("Failed deleting on cloud: {} ({})", message, code);
             }
         });
     }

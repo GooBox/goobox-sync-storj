@@ -75,11 +75,11 @@ public class UploadFileTask implements Runnable {
             }
 
             @Override
-            public void onError(String filePath, String message) {
+            public void onError(String filePath, int code, String message) {
                 try {
                     DB.setUploadFailed(path);
                     DB.commit();
-                    logger.error("Upload failed: {}", message);
+                    logger.error("Upload failed: {} ({})", message, code);
                 } catch (IOException e) {
                     logger.error("I/O error", e);
                 }
@@ -118,8 +118,8 @@ public class UploadFileTask implements Runnable {
                             }
 
                             @Override
-                            public void onError(String message) {
-                                logger.error("Failed deleting old version: {}. Trying again.", message);
+                            public void onError(int code, String message) {
+                                logger.error("Failed deleting old version: {} ({}). Trying again.", message, code);
                                 latch.countDown();
                             }
                         });
@@ -127,8 +127,9 @@ public class UploadFileTask implements Runnable {
                 }
 
                 @Override
-                public void onError(String message) {
-                    logger.error("Error checking if file with name {} exists: {}. Trying again.", fileName, message);
+                public void onError(int code, String message) {
+                    logger.error("Error checking if file with name {} exists: {} ({}). Trying again.",
+                            fileName, message, code);
                     latch.countDown();
                 }
             });

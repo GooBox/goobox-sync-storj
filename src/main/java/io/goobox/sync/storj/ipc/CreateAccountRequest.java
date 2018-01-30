@@ -62,8 +62,8 @@ public class CreateAccountRequest {
             }
 
             @Override
-            public void onError(String message) {
-                error[0] = message.substring(message.indexOf("Error: ") + 7);
+            public void onError(int code, String message) {
+                error[0] = message;
                 latch.countDown();
             }
         });

@@ -79,8 +79,8 @@ public class CheckStateTask implements Runnable {
             }
 
             @Override
-            public void onError(String message) {
-                logger.error(message);
+            public void onError(int code, String message) {
+                logger.error("{} ({})", message, code);
                 // Try again
                 tasks.add(CheckStateTask.this);
             }

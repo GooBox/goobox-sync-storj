@@ -71,12 +71,12 @@ public class DownloadFileTask implements Runnable {
             }
 
             @Override
-            public void onError(String fileId, String message) {
+            public void onError(String fileId, int code, String message) {
                 Path localPath = App.getInstance().getSyncDir().resolve(file.getName());
                 try {
                     DB.setDownloadFailed(file, localPath);
                     DB.commit();
-                    logger.error("Download failed: {}", message);
+                    logger.error("Download failed: {} ({})", message, code);
                 } catch (IOException e) {
                     logger.error("I/O error", e);
                 }
