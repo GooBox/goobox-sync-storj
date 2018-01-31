@@ -186,7 +186,11 @@ public class App implements ShutdownListener {
     @Override
     public void shutdown() {
         logger.info("Shutting down");
-        overlayHelper.shutdown();
+
+        if (overlayHelper != null) {
+            overlayHelper.shutdown();
+        }
+
         System.exit(0);
     }
 
