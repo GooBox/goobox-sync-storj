@@ -1,6 +1,7 @@
 # goobox-sync-storj
 
 [![Build Status](https://travis-ci.org/GooBox/goobox-sync-storj.svg?branch=master)](https://travis-ci.org/GooBox/goobox-sync-storj)
+[![Storj.io](https://storj.io/img/storj-badge.svg)](https://storj.io)
 
 Sync app for Storj.
 
