@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,39 +50,68 @@ public class DownloadFileTask implements Runnable {
             Files.createDirectories(App.getInstance().getSyncDir().resolve(file.getName()).getParent());
         } catch (IOException e) {
             logger.error("Failed creating parent directories", e);
+            return;
         }
 
-        App.getInstance().getStorj().downloadFile(bucket, file, new DownloadFileCallback() {
-            @Override
-            public void onProgress(String fileId, double progress, long downloadedBytes, long totalBytes) {
-                String progressMessage = String.format("  %3d%% %15d/%d bytes",
-                        (int) (progress * 100), downloadedBytes, totalBytes);
-                logger.info(progressMessage);
-            }
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean repeat[] = { true };
 
-            @Override
-            public void onComplete(String fileId, String localPath) {
-                try {
-                    DB.setSynced(file, Paths.get(localPath));
-                    DB.commit();
-                    logger.info("Download completed");
-                } catch (IOException e) {
-                    logger.error("I/O error", e);
+        while (repeat[0]) {
+            App.getInstance().getStorj().downloadFile(bucket, file, new DownloadFileCallback() {
+                @Override
+                public void onProgress(String fileId, double progress, long downloadedBytes, long totalBytes) {
+                    String progressMessage = String.format("  %3d%% %15d/%d bytes",
+                            (int) (progress * 100), downloadedBytes, totalBytes);
+                    logger.info(progressMessage);
                 }
-            }
 
-            @Override
-            public void onError(String fileId, int code, String message) {
-                Path localPath = App.getInstance().getSyncDir().resolve(file.getName());
-                try {
-                    DB.setDownloadFailed(file, localPath);
-                    DB.commit();
-                    logger.error("Download failed: {} ({})", message, code);
-                } catch (IOException e) {
-                    logger.error("I/O error", e);
+                @Override
+                public void onComplete(String fileId, String localPath) {
+                    try {
+                        DB.setSynced(file, Paths.get(localPath));
+                        DB.commit();
+                        logger.info("Download completed");
+                    } catch (IOException e) {
+                        logger.error("I/O error", e);
+                    }
+
+                    repeat[0] = false;
+                    latch.countDown();
                 }
+
+                @Override
+                public void onError(String fileId, int code, String message) {
+                    if (StorjUtil.isTemporaryError(code)) {
+                        logger.error("Download failed due to temporary error: {} ({}). Trying again.", message, code);
+                    } else {
+                        Path localPath = App.getInstance().getSyncDir().resolve(file.getName());
+                        try {
+                            DB.setDownloadFailed(file, localPath);
+                            DB.commit();
+                            logger.error("Download failed: {} ({})", message, code);
+                        } catch (IOException e) {
+                            logger.error("I/O error", e);
+                        }
+
+                        repeat[0] = false;
+                    }
+
+                    latch.countDown();
+                }
+            });
+
+            try {
+                latch.await();
+
+                if (repeat[0]) {
+                    // error - wait 3 seconds before trying again
+                    Thread.sleep(3000);
+                }
+            } catch (InterruptedException e) {
+                // interrupted - stop execution
+                return;
             }
-        });
+        }
     }
 
 }

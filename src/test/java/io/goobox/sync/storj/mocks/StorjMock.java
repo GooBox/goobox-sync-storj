@@ -25,6 +25,8 @@ import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.DownloadFileCallback;
 import io.storj.libstorj.File;
+import io.storj.libstorj.GetFileCallback;
+import io.storj.libstorj.GetFileIdCallback;
 import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.ListFilesCallback;
 import io.storj.libstorj.Storj;
@@ -79,11 +81,38 @@ public class StorjMock extends MockUp<Storj> {
     }
 
     @Mock
+    public void getFileId(Bucket bucket, String fileName, GetFileIdCallback callback) throws KeysNotFoundException {
+        for (File file : files) {
+            if (fileName.equals(file.getName())) {
+                callback.onFileIdReceived(file.getId());
+                return;
+            }
+        }
+        callback.onError(Storj.HTTP_NOT_FOUND, "File not found");
+    }
+
+    @Mock
+    public void getFile(Bucket bucket, String fileId, GetFileCallback callback) throws KeysNotFoundException {
+        for (File file : files) {
+            if (fileId.equals(file.getId())) {
+                callback.onFileReceived(file);
+                return;
+            }
+        }
+        callback.onError(Storj.HTTP_NOT_FOUND, "File not found");
+    }
+
+    @Mock
     public void deleteFile(Bucket bucket, File file, DeleteFileCallback callback) throws KeysNotFoundException {
+        deleteFile(bucket.getId(), file.getId(), callback);
+    }
+
+    @Mock
+    public void deleteFile(String bucketId, String fileId, DeleteFileCallback callback) throws KeysNotFoundException {
         Iterator<File> i = files.iterator();
         while (i.hasNext()) {
             File f = i.next();
-            if (f.equals(file)) {
+            if (f.getId().equals(fileId)) {
                 i.remove();
                 callback.onFileDeleted();
                 return;

@@ -27,7 +27,9 @@ import org.slf4j.LoggerFactory;
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.File;
-import io.storj.libstorj.ListFilesCallback;
+import io.storj.libstorj.GetFileCallback;
+import io.storj.libstorj.GetFileIdCallback;
+import io.storj.libstorj.Storj;
 import io.storj.libstorj.UploadFileCallback;
 
 public class CreateCloudDirTask implements Runnable {
@@ -46,49 +48,73 @@ public class CreateCloudDirTask implements Runnable {
     public void run() {
         try {
             String dirName = StorjUtil.getStorjName(path);
-            File storjDir = getCloudDir(dirName);
-            if (storjDir != null) {
-                DB.setSynced(storjDir, path);
-                DB.commit();
+            String dirId = getDirId(dirName);
+            if (dirId != null) {
+                setSynced(dirId);
             } else {
                 final Path tmp = createTempDirFile();
 
                 logger.info("Creating cloud directory {}", dirName);
 
-                App.getInstance().getStorj().uploadFile(bucket, dirName, tmp.toString(), new UploadFileCallback() {
-                    @Override
-                    public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
-                        String progressMessage = String.format("  %3d%% %15d/%d bytes",
-                                (int) (progress * 100), uploadedBytes, totalBytes);
-                        logger.info(progressMessage);
-                    }
+                final CountDownLatch latch = new CountDownLatch(1);
+                final boolean repeat[] = { true };
 
-                    @Override
-                    public void onComplete(final String filePath, final File file) {
-                        try {
-                            deleteTempDirFile(tmp);
-
-                            DB.setSynced(file, path);
-                            DB.commit();
-                        } catch (IOException e) {
-                            logger.error("I/O error", e);
+                while (repeat[0]) {
+                    App.getInstance().getStorj().uploadFile(bucket, dirName, tmp.toString(), new UploadFileCallback() {
+                        @Override
+                        public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
+                            String progressMessage = String.format("  %3d%% %15d/%d bytes",
+                                    (int) (progress * 100), uploadedBytes, totalBytes);
+                            logger.info(progressMessage);
                         }
-                    }
 
-                    @Override
-                    public void onError(String filePath, int code, String message) {
-                        try {
-                            deleteTempDirFile(tmp);
+                        @Override
+                        public void onComplete(final String filePath, final File file) {
+                            try {
+                                deleteTempDirFile(tmp);
 
-                            DB.setUploadFailed(path);
-                            DB.commit();
+                                DB.setSynced(file, path);
+                                DB.commit();
+                            } catch (IOException e) {
+                                logger.error("I/O error", e);
+                            }
 
-                            logger.error("{} ({})", message, code);
-                        } catch (IOException e) {
-                            logger.error("I/O error", e);
+                            repeat[0] = false;
+                            latch.countDown();
                         }
+
+                        @Override
+                        public void onError(String filePath, int code, String message) {
+                            if (StorjUtil.isTemporaryError(code)) {
+                                logger.error(
+                                        "Creating cloud directory failed due to temporary error: {} ({}). Trying again.",
+                                        message, code);
+                            } else {
+                                try {
+                                    deleteTempDirFile(tmp);
+
+                                    DB.setUploadFailed(path);
+                                    DB.commit();
+
+                                    logger.error("Creating cloud directory failed: {} ({})", message, code);
+                                } catch (IOException e) {
+                                    logger.error("I/O error", e);
+                                }
+
+                                repeat[0] = false;
+                            }
+
+                            latch.countDown();
+                        }
+                    });
+
+                    latch.await();
+
+                    if (repeat[0]) {
+                        // error - wait 3 seconds before trying again
+                        Thread.sleep(3000);
                     }
-                });
+                }
             }
         } catch (IOException e) {
             logger.error("Failed creating temp file", e);
@@ -98,37 +124,91 @@ public class CreateCloudDirTask implements Runnable {
         }
     }
 
-    private File getCloudDir(final String dirName) throws InterruptedException {
+    private String getDirId(final String dirName) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        final File result[] = { null };
+        final String result[] = { null };
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
-            App.getInstance().getStorj().listFiles(bucket, new ListFilesCallback() {
+            App.getInstance().getStorj().getFileId(bucket, dirName, new GetFileIdCallback() {
                 @Override
-                public void onFilesReceived(File[] files) {
-                    for (File f : files) {
-                        if (dirName.equals(f.getName())) {
-                            result[0] = f;
-                        }
-                    }
-
+                public void onFileIdReceived(String fileId) {
+                    result[0] = fileId;
                     repeat[0] = false;
                     latch.countDown();
                 }
 
                 @Override
                 public void onError(int code, String message) {
-                    logger.error("Error checking if directory with name {} exists: {} ({}). Trying again.",
-                            dirName, message, code);
+                    if (code == Storj.HTTP_NOT_FOUND) {
+                        // no such dir
+                        repeat[0] = false;
+                    } else if (StorjUtil.isTemporaryError(code)) {
+                        logger.error(
+                                "Error checking if directory with name {} exists due to temporary error: {} ({}). Trying again.",
+                                dirName, message, code);
+                    } else {
+                        logger.error(
+                                "Error checking if directory with name {} exists: {} ({})",
+                                dirName, message, code);
+                        repeat[0] = false;
+                    }
                     latch.countDown();
                 }
             });
+
+            latch.await();
+
+            if (repeat[0]) {
+                // error - wait 3 seconds before trying again
+                Thread.sleep(3000);
+            }
         }
 
-        latch.await();
-
         return result[0];
+    }
+
+    private void setSynced(String dirId) throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean repeat[] = { true };
+
+        while (repeat[0]) {
+            App.getInstance().getStorj().getFile(bucket, dirId, new GetFileCallback() {
+                @Override
+                public void onFileReceived(File dir) {
+                    try {
+                        DB.setSynced(dir, path);
+                        DB.commit();
+                    } catch (IOException e) {
+                        logger.error("I/O error", e);
+                    }
+                    repeat[0] = false;
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(int code, String message) {
+                    if (StorjUtil.isTemporaryError(code)) {
+                        logger.error(
+                                "Error getting directory metadata for {} due to temporary error: {} ({}). Trying again.",
+                                dirId, message, code);
+                    } else {
+                        logger.error(
+                                "Error getting directory metadata for {}: {} ({})",
+                                dirId, message, code);
+                        repeat[0] = false;
+                    }
+                    latch.countDown();
+                }
+            });
+
+            latch.await();
+
+            if (repeat[0]) {
+                // error - wait 3 seconds before trying again
+                Thread.sleep(3000);
+            }
+        }
     }
 
     private Path createTempDirFile() throws IOException {

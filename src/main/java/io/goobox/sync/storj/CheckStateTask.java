@@ -81,7 +81,13 @@ public class CheckStateTask implements Runnable {
             @Override
             public void onError(int code, String message) {
                 logger.error("{} ({})", message, code);
-                // Try again
+                // wait 3 seconds before trying again
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    // interrupted - stop execution
+                    return;
+                }
                 tasks.add(CheckStateTask.this);
             }
         });

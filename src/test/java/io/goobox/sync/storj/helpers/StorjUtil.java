@@ -17,13 +17,14 @@
 package io.goobox.sync.storj.helpers;
 
 import io.goobox.sync.storj.App;
+import io.goobox.sync.storj.mocks.StorjMock;
 import io.storj.libstorj.DeleteFileCallback;
 import io.storj.libstorj.File;
 
 public class StorjUtil {
 
     public static void deleteFile(File file) {
-        App.getInstance().getStorj().deleteFile(null, file, new TestDeleteFileCallback());
+        App.getInstance().getStorj().deleteFile(StorjMock.BUCKET, file, new TestDeleteFileCallback());
     }
 
     private static class TestDeleteFileCallback implements DeleteFileCallback {
