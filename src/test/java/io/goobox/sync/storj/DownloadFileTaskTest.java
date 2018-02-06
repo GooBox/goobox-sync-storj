@@ -59,7 +59,7 @@ public class DownloadFileTaskTest {
 
         DB.addForDownload(StorjMock.FILE_1);
 
-        new DownloadFileTask(null, StorjMock.FILE_1).run();
+        new DownloadFileTask(StorjMock.BUCKET, StorjMock.FILE_1).run();
 
         Assert.assertTrue(Files.exists(FileMock.FILE_1.getPath()));
         AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
@@ -71,7 +71,7 @@ public class DownloadFileTaskTest {
 
         DB.addForDownload(StorjMock.FILE_2);
 
-        new DownloadFileTask(null, StorjMock.FILE_2).run();
+        new DownloadFileTask(StorjMock.BUCKET, StorjMock.FILE_2).run();
 
         AssertState.assertDB(StorjMock.FILE_2, SyncState.DOWNLOAD_FAILED);
     }
@@ -83,7 +83,7 @@ public class DownloadFileTaskTest {
 
         DB.addForDownload(StorjMock.SUB_FILE);
 
-        new DownloadFileTask(null, StorjMock.SUB_FILE).run();
+        new DownloadFileTask(StorjMock.BUCKET, StorjMock.SUB_FILE).run();
 
         Assert.assertTrue(Files.exists(FileMock.SUB_FILE.getPath()));
         AssertState.assertDB(StorjMock.SUB_FILE, FileMock.SUB_FILE, SyncState.SYNCED);
@@ -96,7 +96,7 @@ public class DownloadFileTaskTest {
 
         DB.addForDownload(StorjMock.SUB_SUB_FILE);
 
-        new DownloadFileTask(null, StorjMock.SUB_SUB_FILE).run();
+        new DownloadFileTask(StorjMock.BUCKET, StorjMock.SUB_SUB_FILE).run();
 
         Assert.assertTrue(Files.exists(FileMock.SUB_SUB_FILE.getPath()));
         AssertState.assertDB(StorjMock.SUB_SUB_FILE, FileMock.SUB_SUB_FILE, SyncState.SYNCED);

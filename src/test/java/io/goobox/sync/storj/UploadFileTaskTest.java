@@ -57,7 +57,7 @@ public class UploadFileTaskTest {
 
         DB.addForUpload(FileMock.FILE_1.getPath());
 
-        new UploadFileTask(null, FileMock.FILE_1.getPath()).run();
+        new UploadFileTask(StorjMock.BUCKET, FileMock.FILE_1.getPath()).run();
 
         AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
@@ -69,7 +69,7 @@ public class UploadFileTaskTest {
 
         DB.addForUpload(FileMock.FILE_1.getPath());
 
-        new UploadFileTask(null, FileMock.FILE_1.getPath()).run();
+        new UploadFileTask(StorjMock.BUCKET, FileMock.FILE_1.getPath()).run();
 
         AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
@@ -81,7 +81,7 @@ public class UploadFileTaskTest {
 
         DB.addForUpload(FileMock.FILE_2.getPath());
 
-        new UploadFileTask(null, FileMock.FILE_2.getPath()).run();
+        new UploadFileTask(StorjMock.BUCKET, FileMock.FILE_2.getPath()).run();
 
         AssertState.assertDB(FileMock.FILE_2, SyncState.UPLOAD_FAILED);
     }
@@ -93,7 +93,7 @@ public class UploadFileTaskTest {
 
         DB.addForUpload(FileMock.SUB_FILE.getPath());
 
-        new UploadFileTask(null, FileMock.SUB_FILE.getPath()).run();
+        new UploadFileTask(StorjMock.BUCKET, FileMock.SUB_FILE.getPath()).run();
 
         AssertState.assertDB(StorjMock.SUB_FILE, FileMock.SUB_FILE, SyncState.SYNCED);
     }
@@ -105,7 +105,7 @@ public class UploadFileTaskTest {
 
         DB.addForUpload(FileMock.SUB_SUB_FILE.getPath());
 
-        new UploadFileTask(null, FileMock.SUB_SUB_FILE.getPath()).run();
+        new UploadFileTask(StorjMock.BUCKET, FileMock.SUB_SUB_FILE.getPath()).run();
 
         AssertState.assertDB(StorjMock.SUB_SUB_FILE, FileMock.SUB_SUB_FILE, SyncState.SYNCED);
     }

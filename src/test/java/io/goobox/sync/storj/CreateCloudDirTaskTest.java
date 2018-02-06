@@ -57,19 +57,19 @@ public class CreateCloudDirTaskTest {
 
         DB.addForCloudCreateDir(FileMock.DIR.getPath());
 
-        new CreateCloudDirTask(null, FileMock.DIR.getPath()).run();
+        new CreateCloudDirTask(StorjMock.BUCKET, FileMock.DIR.getPath()).run();
 
         AssertState.assertDB(StorjMock.DIR, FileMock.DIR, SyncState.SYNCED);
     }
 
     @Test
-    public void createLocalDirAlreadyExists() throws Exception {
+    public void createCloudDirAlreadyExists() throws Exception {
         new StorjMock(StorjMock.DIR);
         new FilesMock(FileMock.DIR);
 
         DB.addForCloudCreateDir(FileMock.DIR.getPath());
 
-        new CreateCloudDirTask(null, FileMock.DIR.getPath()).run();
+        new CreateCloudDirTask(StorjMock.BUCKET, FileMock.DIR.getPath()).run();
 
         AssertState.assertDB(StorjMock.DIR, FileMock.DIR, SyncState.SYNCED);
     }
@@ -81,7 +81,7 @@ public class CreateCloudDirTaskTest {
 
         DB.addForCloudCreateDir(FileMock.SUB_DIR.getPath());
 
-        new CreateCloudDirTask(null, FileMock.SUB_DIR.getPath()).run();
+        new CreateCloudDirTask(StorjMock.BUCKET, FileMock.SUB_DIR.getPath()).run();
 
         AssertState.assertDB(StorjMock.SUB_DIR, FileMock.SUB_DIR, SyncState.SYNCED);
     }
@@ -93,7 +93,7 @@ public class CreateCloudDirTaskTest {
 
         DB.addForCloudCreateDir(FileMock.SUB_DIR.getPath());
 
-        new CreateCloudDirTask(null, FileMock.SUB_DIR.getPath()).run();
+        new CreateCloudDirTask(StorjMock.BUCKET, FileMock.SUB_DIR.getPath()).run();
 
         AssertState.assertDB(StorjMock.SUB_DIR, FileMock.SUB_DIR, SyncState.SYNCED);
     }

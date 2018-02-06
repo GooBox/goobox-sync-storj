@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import io.storj.libstorj.Storj;
+
 public class StorjUtil {
 
     public static long getTime(String storjTimestamp) throws ParseException {
@@ -39,6 +41,28 @@ public class StorjUtil {
             name += "/";
         }
         return name;
+    }
+
+    public static boolean isTemporaryError(int code) {
+        switch (code) {
+        case Storj.CURLE_COULDNT_RESOLVE_PROXY:
+        case Storj.CURLE_COULDNT_RESOLVE_HOST:
+        case Storj.CURLE_COULDNT_CONNECT:
+        case Storj.CURLE_OPERATION_TIMEDOUT:
+        case Storj.HTTP_INTERNAL_SERVER_ERROR:
+        case Storj.HTTP_SERVICE_UNAVAILABLE:
+        case Storj.STORJ_BRIDGE_REQUEST_ERROR:
+        case Storj.STORJ_BRIDGE_TOKEN_ERROR:
+        case Storj.STORJ_BRIDGE_TIMEOUT_ERROR:
+        case Storj.STORJ_BRIDGE_INTERNAL_ERROR:
+        case Storj.STORJ_BRIDGE_FRAME_ERROR:
+        case Storj.STORJ_BRIDGE_POINTER_ERROR:
+        case Storj.STORJ_BRIDGE_REPOINTER_ERROR:
+        case Storj.STORJ_BRIDGE_OFFER_ERROR:
+            return true;
+        default:
+            return false;
+        }
     }
 
 }
