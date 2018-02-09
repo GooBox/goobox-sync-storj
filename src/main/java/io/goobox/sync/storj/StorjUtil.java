@@ -59,6 +59,8 @@ public class StorjUtil {
         case Storj.STORJ_BRIDGE_POINTER_ERROR:
         case Storj.STORJ_BRIDGE_REPOINTER_ERROR:
         case Storj.STORJ_BRIDGE_OFFER_ERROR:
+        case Storj.STORJ_FARMER_REQUEST_ERROR:
+        case Storj.STORJ_FARMER_TIMEOUT_ERROR:
             return true;
         default:
             return false;
