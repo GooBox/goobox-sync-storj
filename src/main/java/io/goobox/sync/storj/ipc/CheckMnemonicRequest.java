@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj.ipc;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +27,13 @@ public class CheckMnemonicRequest {
 
     private static final Logger logger = LoggerFactory.getLogger(CheckMnemonicRequest.class);
 
+    public static final String METHOD = "checkMnemonic";
+
     private String encryptionKey;
+
+    public CheckMnemonicRequest(Map<String, String> args) {
+        this(args.get("encryptionKey"));
+    }
 
     public CheckMnemonicRequest(String encryptionKey) {
         this.encryptionKey = encryptionKey;
