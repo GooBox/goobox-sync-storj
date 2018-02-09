@@ -16,6 +16,7 @@
  */
 package io.goobox.sync.storj.ipc;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
@@ -29,8 +30,14 @@ public class CreateAccountRequest {
 
     private static final Logger logger = LoggerFactory.getLogger(CreateAccountRequest.class);
 
+    public static final String METHOD = "createAccount";
+
     private String email;
     private String password;
+
+    public CreateAccountRequest(Map<String, String> args) {
+        this(args.get("email"), args.get("password"));
+    }
 
     public CreateAccountRequest(String email, String password) {
         this.email = email;

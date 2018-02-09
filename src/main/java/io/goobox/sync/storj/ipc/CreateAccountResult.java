@@ -18,7 +18,7 @@ package io.goobox.sync.storj.ipc;
 
 public class CreateAccountResult extends CommandResult {
 
-    private String encryptionKey;
+    String encryptionKey;
 
     public CreateAccountResult(Status status, String message, String encryptionKey) {
         super(status, message);

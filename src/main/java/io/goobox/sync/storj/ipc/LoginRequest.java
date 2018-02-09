@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj.ipc;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +29,15 @@ public class LoginRequest {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginRequest.class);
 
+    public static final String METHOD = "login";
+
     private String email;
     private String password;
     private String encryptionKey;
+
+    public LoginRequest(Map<String, String> args) {
+        this(args.get("email"), args.get("password"), args.get("encryptionKey"));
+    }
 
     public LoginRequest(String email, String password, String encryptionKey) {
         this.email = email;

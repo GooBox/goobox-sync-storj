@@ -20,6 +20,8 @@ import io.goobox.sync.storj.App;
 
 public class QuitCommand {
 
+    public static final String METHOD = "quit";
+
     public CommandResult execute() {
         App.getInstance().shutdown();
         return null;

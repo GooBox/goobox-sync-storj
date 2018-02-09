@@ -16,6 +16,7 @@
  */
 package io.goobox.sync.storj.ipc;
 
+import java.util.Map;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
@@ -35,12 +36,12 @@ public class IpcExecutor extends Thread {
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
                 String input = scanner.nextLine();
-                logger.debug("Command input received: {}", input);
 
                 CommandResult result = null;
                 try {
                     Command cmd = gson.fromJson(input, Command.class);
                     if (cmd != null) {
+                        log(input, cmd.args);
                         result = cmd.execute();
                     }
                 } catch (JsonSyntaxException e) {
@@ -73,7 +74,7 @@ public class IpcExecutor extends Thread {
     private void send(Object obj, String debugMessage) {
         if (obj != null) {
             String output = gson.toJson(obj);
-            logger.debug("{}: {}", debugMessage, output);
+            log(debugMessage, output, obj);
             send(output);
         }
     }
@@ -81,6 +82,40 @@ public class IpcExecutor extends Thread {
     private void send(String msg) {
         synchronized (this) {
             System.out.println(msg);
+        }
+    }
+
+    private void log(String input, Map<String, String> args) {
+        if (logger.isDebugEnabled()) {
+            if (args != null) {
+                String email = args.get("email");
+                if (email != null) {
+                    input = input.replace("\"" + email + "\"", "\"********\"");
+                }
+
+                String password = args.get("password");
+                if (password != null) {
+                    input = input.replace("\"" + password + "\"", "\"********\"");
+                }
+
+                String encryptionKey = args.get("encryptionKey");
+                if (encryptionKey != null) {
+                    input = input.replace("\"" + encryptionKey + "\"", "\"********\"");
+                }
+            }
+            logger.debug("Command input received: {}", input);
+        }
+    }
+
+    private void log(String msg, String output, Object obj) {
+        if (logger.isDebugEnabled()) {
+            if (obj instanceof CreateAccountResult) {
+                String encryptionKey = ((CreateAccountResult) obj).encryptionKey;
+                if (encryptionKey != null) {
+                    output = output.replace("\"" + encryptionKey + "\"", "\"********\"");
+                }
+            }
+            logger.debug("{}: {}", msg, output);
         }
     }
 

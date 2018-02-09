@@ -29,19 +29,27 @@ public class Command {
     protected Map<String, String> args;
 
     public CommandResult execute() {
-        if ("login".equals(method)) {
-            return new LoginRequest(args.get("email"), args.get("password"), args.get("encryptionKey")).execute();
-        } else if ("createAccount".equals(method)) {
-            return new CreateAccountRequest(args.get("email"), args.get("password")).execute();
-        } else if ("checkMnemonic".equals(method)) {
-            return new CheckMnemonicRequest(args.get("encryptionKey")).execute();
-        } else if ("quit".equals(method)) {
-            return new QuitCommand().execute();
-        } else {
-            String msg = "Invalid command method: " + method;
-            logger.error(msg);
-            return new CommandResult(Status.ERROR, msg);
+        if (method == null) {
+            return errorResult("Method missing");
         }
+
+        switch (method) {
+        case LoginRequest.METHOD:
+            return new LoginRequest(args).execute();
+        case CreateAccountRequest.METHOD:
+            return new CreateAccountRequest(args).execute();
+        case CheckMnemonicRequest.METHOD:
+            return new CheckMnemonicRequest(args).execute();
+        case QuitCommand.METHOD:
+            return new QuitCommand().execute();
+        default:
+            return errorResult("Invalid command method: " + method);
+        }
+    }
+
+    public CommandResult errorResult(String msg) {
+        logger.error(msg);
+        return new CommandResult(Status.ERROR, msg);
     }
 
 }
