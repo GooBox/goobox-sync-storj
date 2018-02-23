@@ -109,8 +109,8 @@ public class IpcExecutor extends Thread {
 
     private void log(String msg, String output, Object obj) {
         if (logger.isDebugEnabled()) {
-            if (obj instanceof CreateAccountResult) {
-                String encryptionKey = ((CreateAccountResult) obj).encryptionKey;
+            if (obj instanceof NewMnemonicResult) {
+                String encryptionKey = ((NewMnemonicResult) obj).encryptionKey;
                 if (encryptionKey != null) {
                     output = output.replace("\"" + encryptionKey + "\"", "\"********\"");
                 }

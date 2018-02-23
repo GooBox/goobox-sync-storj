@@ -16,13 +16,27 @@
  */
 package io.goobox.sync.storj.ipc;
 
-public class CreateAccountResult extends CommandResult {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    String encryptionKey;
+import io.storj.libstorj.Storj;
 
-    public CreateAccountResult(Status status, String message, String encryptionKey) {
-        super(status, message);
-        this.encryptionKey = encryptionKey;
+public class GenerateMnemonicRequest {
+
+    private static final Logger logger = LoggerFactory.getLogger(GenerateMnemonicRequest.class);
+
+    public static final String METHOD = "generateMnemonic";
+
+    public CommandResult execute() {
+        String mnemonic = Storj.generateMnemonic(256);
+
+        if (mnemonic == null) {
+            String msg = String.format("Failed to generate encryption key");
+            logger.error(msg);
+            return new CommandResult(Status.ERROR, msg);
+        }
+
+        return new NewMnemonicResult(Status.OK, null, mnemonic);
     }
 
 }
