@@ -82,12 +82,10 @@ public class CreateAccountRequest {
         }
 
         if (error[0] != null) {
-            return new CreateAccountResult(Status.ERROR, error[0], null);
+            return new CommandResult(Status.ERROR, error[0]);
         }
 
-        String mnemonic = Storj.generateMnemonic(256);
-
-        return new CreateAccountResult(Status.OK, null, mnemonic);
+        return new GenerateMnemonicRequest().execute();
     }
 
 }

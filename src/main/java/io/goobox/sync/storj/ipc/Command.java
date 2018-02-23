@@ -40,6 +40,8 @@ public class Command {
             return new CreateAccountRequest(args).execute();
         case CheckMnemonicRequest.METHOD:
             return new CheckMnemonicRequest(args).execute();
+        case GenerateMnemonicRequest.METHOD:
+            return new GenerateMnemonicRequest().execute();
         case QuitCommand.METHOD:
             return new QuitCommand().execute();
         default:
