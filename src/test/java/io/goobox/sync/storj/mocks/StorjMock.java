@@ -122,7 +122,7 @@ public class StorjMock extends MockUp<Storj> {
     }
 
     @Mock
-    public void downloadFile(Bucket bucket, File file, DownloadFileCallback callback) throws KeysNotFoundException {
+    public long downloadFile(Bucket bucket, File file, DownloadFileCallback callback) throws KeysNotFoundException {
         if (FILE_1.equals(file)) {
             filesMock.addFile(FileMock.FILE_1);
             callback.onComplete(file.getId(), FileMock.FILE_1.getPath().toString());
@@ -135,10 +135,11 @@ public class StorjMock extends MockUp<Storj> {
         } else {
             callback.onError(file.getId(), Storj.STORJ_BRIDGE_FILE_NOTFOUND_ERROR, "error downloading");
         }
+        return 0;
     }
 
     @Mock
-    public void uploadFile(Bucket bucket, String fileName, String localPath, UploadFileCallback callback)
+    public long uploadFile(Bucket bucket, String fileName, String localPath, UploadFileCallback callback)
             throws KeysNotFoundException {
         if (FileMock.FILE_1.getPath().toString().equals(localPath)) {
             if (files.contains(FILE_1)) {
@@ -162,6 +163,7 @@ public class StorjMock extends MockUp<Storj> {
         } else {
             callback.onError(localPath, Storj.ENOENT, "error uploading");
         }
+        return 0;
     }
 
     public void modifyFile(File oldFile, File newFile) {
