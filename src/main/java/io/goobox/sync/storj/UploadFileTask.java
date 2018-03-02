@@ -56,10 +56,11 @@ public class UploadFileTask implements Runnable {
 
         logger.info("Uploading file {}", fileName);
 
-        final CountDownLatch latch = new CountDownLatch(1);
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
             App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
                 @Override
                 public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
@@ -117,10 +118,11 @@ public class UploadFileTask implements Runnable {
     }
 
     private void deleteIfExisting() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
             App.getInstance().getStorj().getFileId(bucket, fileName, new GetFileIdCallback() {
                 @Override
                 public void onFileIdReceived(String fileId) {
