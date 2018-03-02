@@ -56,10 +56,11 @@ public class CreateCloudDirTask implements Runnable {
 
                 logger.info("Creating cloud directory {}", dirName);
 
-                final CountDownLatch latch = new CountDownLatch(1);
                 final boolean repeat[] = { true };
 
                 while (repeat[0]) {
+                    final CountDownLatch latch = new CountDownLatch(1);
+
                     App.getInstance().getStorj().uploadFile(bucket, dirName, tmp.toString(), new UploadFileCallback() {
                         @Override
                         public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
@@ -71,10 +72,10 @@ public class CreateCloudDirTask implements Runnable {
                         @Override
                         public void onComplete(final String filePath, final File file) {
                             try {
-                                deleteTempDirFile(tmp);
-
                                 DB.setSynced(file, path);
                                 DB.commit();
+
+                                deleteTempDirFile(tmp);
                             } catch (IOException e) {
                                 logger.error("I/O error", e);
                             }
@@ -89,14 +90,16 @@ public class CreateCloudDirTask implements Runnable {
                                 logger.error(
                                         "Creating cloud directory failed due to temporary error: {} ({}). Trying again.",
                                         message, code);
+                            } else if (code == Storj.STORJ_BRIDGE_BUCKET_FILE_EXISTS) {
+                                // ignore it - this happens sometimes after farmer request error
                             } else {
-                                try {
-                                    deleteTempDirFile(tmp);
+                                logger.error("Creating cloud directory failed: {} ({})", message, code);
 
+                                try {
                                     DB.setUploadFailed(path);
                                     DB.commit();
 
-                                    logger.error("Creating cloud directory failed: {} ({})", message, code);
+                                    deleteTempDirFile(tmp);
                                 } catch (IOException e) {
                                     logger.error("I/O error", e);
                                 }
@@ -125,11 +128,12 @@ public class CreateCloudDirTask implements Runnable {
     }
 
     private String getDirId(final String dirName) throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
         final String result[] = { null };
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
             App.getInstance().getStorj().getFileId(bucket, dirName, new GetFileIdCallback() {
                 @Override
                 public void onFileIdReceived(String fileId) {
@@ -169,10 +173,11 @@ public class CreateCloudDirTask implements Runnable {
     }
 
     private void setSynced(String dirId) throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
             App.getInstance().getStorj().getFile(bucket, dirId, new GetFileCallback() {
                 @Override
                 public void onFileReceived(File dir) {

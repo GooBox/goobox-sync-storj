@@ -53,10 +53,11 @@ public class DownloadFileTask implements Runnable {
             return;
         }
 
-        final CountDownLatch latch = new CountDownLatch(1);
         final boolean repeat[] = { true };
 
         while (repeat[0]) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
             App.getInstance().getStorj().downloadFile(bucket, file, new DownloadFileCallback() {
                 @Override
                 public void onProgress(String fileId, double progress, long downloadedBytes, long totalBytes) {
