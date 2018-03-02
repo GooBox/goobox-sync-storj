@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,19 +42,30 @@ public class DeleteCloudFileTask implements Runnable {
     public void run() {
         logger.info("Deleting cloud {}", file.getName());
 
+        final CountDownLatch latch = new CountDownLatch(1);
+
         App.getInstance().getStorj().deleteFile(bucket, file, new DeleteFileCallback() {
             @Override
             public void onFileDeleted() {
                 logger.info("Cloud deletion successful");
                 DB.remove(file);
                 DB.commit();
+                latch.countDown();
             }
 
             @Override
             public void onError(int code, String message) {
                 logger.error("Failed deleting on cloud: {} ({})", message, code);
+                latch.countDown();
             }
         });
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            // interrupted - stop execution
+            return;
+        }
     }
 
 }
