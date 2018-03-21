@@ -125,19 +125,19 @@ public class UploadFileTask implements Runnable {
 
             App.getInstance().getStorj().getFileId(bucket, fileName, new GetFileIdCallback() {
                 @Override
-                public void onFileIdReceived(String fileId) {
+                public void onFileIdReceived(String fileName, String fileId) {
                     logger.info("Deleting old version of {} on the cloud", fileName);
 
                     App.getInstance().getStorj().deleteFile(bucket.getId(), fileId, new DeleteFileCallback() {
                         @Override
-                        public void onFileDeleted() {
+                        public void onFileDeleted(String fileId) {
                             logger.info("Old version of {} deleted", fileName);
                             repeat[0] = false;
                             latch.countDown();
                         }
 
                         @Override
-                        public void onError(int code, String message) {
+                        public void onError(String fileId, int code, String message) {
                             if (StorjUtil.isTemporaryError(code)) {
                                 logger.error(
                                         "Failed deleting old version due to temporary error: {} ({}). Trying again.",
@@ -152,7 +152,7 @@ public class UploadFileTask implements Runnable {
                 }
 
                 @Override
-                public void onError(int code, String message) {
+                public void onError(String fileName, int code, String message) {
                     if (code == Storj.HTTP_NOT_FOUND) {
                         // no file to delete
                         repeat[0] = false;

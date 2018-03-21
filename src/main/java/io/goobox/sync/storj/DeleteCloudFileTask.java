@@ -46,7 +46,7 @@ public class DeleteCloudFileTask implements Runnable {
 
         App.getInstance().getStorj().deleteFile(bucket, file, new DeleteFileCallback() {
             @Override
-            public void onFileDeleted() {
+            public void onFileDeleted(String fileId) {
                 logger.info("Cloud deletion successful");
                 DB.remove(file);
                 DB.commit();
@@ -54,7 +54,7 @@ public class DeleteCloudFileTask implements Runnable {
             }
 
             @Override
-            public void onError(int code, String message) {
+            public void onError(String fileId, int code, String message) {
                 logger.error("Failed deleting on cloud: {} ({})", message, code);
                 latch.countDown();
             }
