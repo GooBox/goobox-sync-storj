@@ -30,11 +30,11 @@ public class StorjUtil {
     private static class TestDeleteFileCallback implements DeleteFileCallback {
 
         @Override
-        public void onFileDeleted() {
+        public void onFileDeleted(String fileId) {
         }
 
         @Override
-        public void onError(int code, String message) {
+        public void onError(String fileId, int code, String message) {
             String msg = String.format("%s (%d)", message, code);
             throw new IllegalStateException(msg);
         }

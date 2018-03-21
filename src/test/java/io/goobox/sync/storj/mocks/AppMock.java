@@ -52,7 +52,7 @@ public class AppMock extends MockUp<App> {
 
     @Mock
     public Bucket getGooboxBucket() {
-        return null;
+        return StorjMock.BUCKET;
     }
 
     @Mock
