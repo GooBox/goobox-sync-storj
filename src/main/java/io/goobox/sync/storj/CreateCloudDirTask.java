@@ -136,14 +136,14 @@ public class CreateCloudDirTask implements Runnable {
 
             App.getInstance().getStorj().getFileId(bucket, dirName, new GetFileIdCallback() {
                 @Override
-                public void onFileIdReceived(String fileId) {
+                public void onFileIdReceived(String fileName, String fileId) {
                     result[0] = fileId;
                     repeat[0] = false;
                     latch.countDown();
                 }
 
                 @Override
-                public void onError(int code, String message) {
+                public void onError(String fileName, int code, String message) {
                     if (code == Storj.HTTP_NOT_FOUND) {
                         // no such dir
                         repeat[0] = false;
@@ -192,7 +192,7 @@ public class CreateCloudDirTask implements Runnable {
                 }
 
                 @Override
-                public void onError(int code, String message) {
+                public void onError(String fileId, int code, String message) {
                     if (StorjUtil.isTemporaryError(code)) {
                         logger.error(
                                 "Error getting directory metadata for {} due to temporary error: {} ({}). Trying again.",

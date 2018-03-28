@@ -77,18 +77,18 @@ public class StorjMock extends MockUp<Storj> {
 
     @Mock
     public void listFiles(Bucket bucket, ListFilesCallback callback) throws KeysNotFoundException {
-        callback.onFilesReceived(files.toArray(new File[files.size()]));
+        callback.onFilesReceived(bucket.getId(), files.toArray(new File[files.size()]));
     }
 
     @Mock
     public void getFileId(Bucket bucket, String fileName, GetFileIdCallback callback) throws KeysNotFoundException {
         for (File file : files) {
             if (fileName.equals(file.getName())) {
-                callback.onFileIdReceived(file.getId());
+                callback.onFileIdReceived(fileName, file.getId());
                 return;
             }
         }
-        callback.onError(Storj.HTTP_NOT_FOUND, "File not found");
+        callback.onError(fileName, Storj.HTTP_NOT_FOUND, "File not found");
     }
 
     @Mock
@@ -99,7 +99,7 @@ public class StorjMock extends MockUp<Storj> {
                 return;
             }
         }
-        callback.onError(Storj.HTTP_NOT_FOUND, "File not found");
+        callback.onError(fileId, Storj.HTTP_NOT_FOUND, "File not found");
     }
 
     @Mock
@@ -114,11 +114,11 @@ public class StorjMock extends MockUp<Storj> {
             File f = i.next();
             if (f.getId().equals(fileId)) {
                 i.remove();
-                callback.onFileDeleted();
+                callback.onFileDeleted(fileId);
                 return;
             }
         }
-        callback.onError(Storj.HTTP_NOT_FOUND, "file not found");
+        callback.onError(fileId, Storj.HTTP_NOT_FOUND, "file not found");
     }
 
     @Mock

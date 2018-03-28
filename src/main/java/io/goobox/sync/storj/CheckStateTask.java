@@ -63,7 +63,7 @@ public class CheckStateTask implements Runnable {
 
         App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
-            public void onFilesReceived(File[] files) {
+            public void onFilesReceived(String bucketId, File[] files) {
                 processFiles(files);
 
                 DB.commit();
@@ -79,7 +79,7 @@ public class CheckStateTask implements Runnable {
             }
 
             @Override
-            public void onError(int code, String message) {
+            public void onError(String bucketId, int code, String message) {
                 logger.error("{} ({})", message, code);
                 // wait 3 seconds before trying again
                 try {
