@@ -18,7 +18,7 @@ language: java
 
 env:
   global:
-  - JAVA_LIBSTORJ_VERSION=0.7.3
+  - JAVA_LIBSTORJ_VERSION=0.8.1
 
 install: true
 
