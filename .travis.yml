@@ -1,5 +1,5 @@
 #######################################################################
-# Copyright (C) 2017 Kaloyan Raev
+# Copyright (C) 2017-2018 Kaloyan Raev and others
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ before_deploy:
 # Prepare a package for macOS
 - mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
 - curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-macos-dylibs.tar.gz | tar -zxv -C java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
-- unzip -f java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs.zip
 - zip -j goobox-sync-storj-$TRAVIS_TAG-darwin.zip java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs/* src/main/resources/goobox-sync-storj target/goobox-sync-storj-$TRAVIS_TAG.jar
 
 deploy:
