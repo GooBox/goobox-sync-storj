@@ -29,7 +29,7 @@ before_deploy:
 # Prepare a package for Windows
 - curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip -O
 - unzip java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip
-- zip -j goobox-sync-storj-$TRAVIS_TAG-win64.zip java-libstorj-dlls-$JAVA_LIBSTORJ_VERSION/* src/main/resources/goobox-sync-storj.bat target/goobox-sync-storj-$TRAVIS_TAG.jar
+- zip -j goobox-sync-storj-$TRAVIS_TAG-win64.zip java-libstorj-dlls-$JAVA_LIBSTORJ_VERSION/* src/main/resources/win64/* target/goobox-sync-storj-$TRAVIS_TAG.jar
 # Prepare a package for macOS
 - mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
 - curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-macos-dylibs.tar.gz | tar -zxv -C java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
