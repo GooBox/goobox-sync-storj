@@ -1,5 +1,5 @@
 #######################################################################
-# Copyright (C) 2017 Kaloyan Raev
+# Copyright (C) 2017-2018 Kaloyan Raev and others
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,33 @@
 #######################################################################
 language: java
 
+env:
+  global:
+  - JAVA_LIBSTORJ_VERSION=0.8.1
+
 install: true
 
 script: mvn clean verify
+
+before_deploy:
+- mvn package
+# Prepare a package for Windows
+- curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip -O
+- unzip java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip
+- zip -j goobox-sync-storj-$TRAVIS_TAG-win64.zip java-libstorj-dlls-$JAVA_LIBSTORJ_VERSION/* src/main/resources/win64/* target/goobox-sync-storj-$TRAVIS_TAG.jar
+# Prepare a package for macOS
+- mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
+- curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-macos-dylibs.tar.gz | tar -zxv -C java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
+- zip -j goobox-sync-storj-$TRAVIS_TAG-darwin.zip java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs/* src/main/resources/goobox-sync-storj target/goobox-sync-storj-$TRAVIS_TAG.jar
+
+deploy:
+  provider: releases
+  api_key:
+    secure: S/q7PYrt2JxBvMyQbaKcVRAD8uCfWuca5ZTIE2euiOeI7ZLHhRItHrqAF/1LcOPhbwwg3Sit4yjlkAv5LYFCKWXH5lHMtzQTTxDJ06MoP7H8jjXquOJL3rxnfldmjRcwp7+JgoPp7HdwFVp3yVrJXLuMqRLMxOllbq9QMMj1cE85Tq6SrAxeujTkRGyAZXAQf0lsd0rl5jc1fxraTEcj8CseRcYAmkIYvmc7hpOEE4WFincYIfJz+o4WWYAIWOuwJ2TCfvCZfp2ibxDtykaUQgKwGaM0bc5LqsoqRBr6fNecsfw7KfLZKhqS+W1s3i+2UeJOgKrdjFi7jFbgi8CpJX0HxFrQX/yKkj4UfWF+5J+yAcvn9sq1hEUI8udKx+9jMvduRxViebGvJ/DgmkeJEvOumQ+Cd2cdTJJYVyX8NL9tVUQBg5biDoZ4qU+RIGzGIWvIRDVjynnl0nMTS0+RxPQM31a2cNnPeNgpqJAIxAjdShgM09fWyfnIds0WAu44eKt96IIfyXw564zTd6Rq4MODRIWxqUxOH8/7/3nMwI5tk4a/Rrhfd+svtHOJO71iMKTdNeGUmaigksPNdxHH72X98oHsH49DnafEgOkpUSIzy5ppFtXYqPygkaH589gqzwbADrXEy55BXoZKeQmD7iBRkx+YODydgoHA/1dyTGU=
+  skip_cleanup: true
+  file:
+  - goobox-sync-storj-$TRAVIS_TAG-win64.zip
+  - goobox-sync-storj-$TRAVIS_TAG-darwin.zip
+  on:
+    tags: true
+    repo: GooBox/goobox-sync-storj
