@@ -53,6 +53,11 @@ public class OverlayHelperTest {
     }
 
     @Test
+    public void excludedFile() throws Exception {
+        Assert.assertEquals(OverlayIcon.NONE.id(), getIconId(".DS_Store"));
+    }
+
+    @Test
     public void fileNotInDB() throws Exception {
         new FilesMock(FileMock.FILE_1);
 
@@ -255,6 +260,10 @@ public class OverlayHelperTest {
         Assert.assertEquals(OverlayIcon.ERROR.id(), getIconId(FileMock.SUB_FILE));
         Assert.assertEquals(OverlayIcon.SYNCING.id(), getIconId(FileMock.SUB_DIR));
         Assert.assertEquals(OverlayIcon.SYNCING.id(), getIconId(FileMock.SUB_SUB_FILE));
+    }
+
+    private int getIconId(String path) {
+        return App.getInstance().getOverlayHelper().getIconForFile(path);
     }
 
     private int getIconId(FileMock file) {
