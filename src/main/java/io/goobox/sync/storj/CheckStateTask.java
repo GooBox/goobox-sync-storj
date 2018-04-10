@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -216,7 +217,7 @@ public class CheckStateTask implements Runnable {
 
     private Path getLocalPath(String name, List<Path> localPaths) {
         for (Path path : localPaths) {
-            if (path.endsWith(name)) {
+            if (StorjUtil.getStorjPath(path).equals(Paths.get(name))) {
                 return path;
             }
         }
