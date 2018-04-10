@@ -18,7 +18,7 @@ language: java
 
 env:
   global:
-  - JAVA_LIBSTORJ_VERSION=0.8.1
+  - JAVA_LIBSTORJ_VERSION=0.8.2
 
 install: true
 
@@ -28,7 +28,7 @@ before_deploy:
 - mvn package
 # Prepare a package for Windows
 - curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip -O
-- unzip java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip
+- unzip java-libstorj-$JAVA_LIBSTORJ_VERSION-win64-dlls.zip -d java-libstorj-dlls-$JAVA_LIBSTORJ_VERSION
 - zip -j goobox-sync-storj-$TRAVIS_TAG-win64.zip java-libstorj-dlls-$JAVA_LIBSTORJ_VERSION/* src/main/resources/win64/* target/goobox-sync-storj-$TRAVIS_TAG.jar
 # Prepare a package for macOS
 - mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
