@@ -34,8 +34,12 @@ public class StorjUtil {
         return date.getTime();
     }
 
+    public static Path getStorjPath(Path path) {
+        return App.getInstance().getSyncDir().relativize(path);
+    }
+
     public static String getStorjName(Path path) {
-        String name = App.getInstance().getSyncDir().relativize(path).toString();
+        String name = getStorjPath(path).toString();
         name = name.replace('\\', '/');
         if (Files.isDirectory(path)) {
             name += "/";

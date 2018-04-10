@@ -21,7 +21,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import org.junit.After;
 import org.junit.Before;
@@ -98,7 +97,7 @@ public class DeleteLocalFileTaskTest {
 
         DB.setSynced(StorjMock.FILE_1, FileMock.FILE_1.getPath());
 
-        new DeleteLocalFileTask(Paths.get("/some/folder/non-existing-file.txt")).run();
+        new DeleteLocalFileTask(App.getInstance().getSyncDir().resolve("/some/folder/non-existing-file.txt")).run();
 
         assertTrue(Files.exists(FileMock.FILE_1.getPath()));
         AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
