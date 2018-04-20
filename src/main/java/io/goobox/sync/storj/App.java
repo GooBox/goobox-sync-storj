@@ -19,7 +19,6 @@ package io.goobox.sync.storj;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.cli.CommandLine;
@@ -41,8 +40,6 @@ import io.storj.libstorj.CreateBucketCallback;
 import io.storj.libstorj.GetBucketsCallback;
 import io.storj.libstorj.KeysNotFoundException;
 import io.storj.libstorj.Storj;
-
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;;
 
 public class App implements ShutdownListener {
 
@@ -153,11 +150,6 @@ public class App implements ShutdownListener {
         storj = new Storj();
         storj.setConfigDirectory(Utils.getDataDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
-
-        if (!storj.keysExist()) {
-            logger.error("keyfile not found at the expected dir " + Utils.getDataDir().toFile());
-            System.exit(1);
-        }
 
         if (resetAuthFile) {
             storj.deleteKeys();
@@ -273,7 +265,7 @@ public class App implements ShutdownListener {
                     }
                 });
             } catch (KeysNotFoundException e) {
-                logger.info("No keys found. Waiting for keys to be imported.");
+                logger.error("keyfile not found at the expected dir " + Utils.getDataDir().toFile());
                 latch.countDown();
             }
 
