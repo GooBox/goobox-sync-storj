@@ -34,7 +34,10 @@ before_deploy:
 - mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
 - curl -sSL https://github.com/Storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-macos-dylibs.tar.gz | tar -zxv -C java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs
 - zip -j goobox-sync-storj-$TRAVIS_TAG-darwin.zip java-libstorj-$JAVA_LIBSTORJ_VERSION-mac-dylibs/* src/main/resources/goobox-sync-storj target/goobox-sync-storj-$TRAVIS_TAG.jar
-
+# Prepare a package for Linux
+- mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so
+- curl -sSL https://github.com/storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so.tar.gz | tar -zxv -C java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so
+- zip -j goobox-sync-storj-$TRAVIS_TAG-linux64.zip java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so/* src/main/resources/linux64/goobox-sync-storj target/goobox-sync-storj-$TRAVIS_TAG.jar
 deploy:
   provider: releases
   api_key:
@@ -43,6 +46,7 @@ deploy:
   file:
   - goobox-sync-storj-$TRAVIS_TAG-win64.zip
   - goobox-sync-storj-$TRAVIS_TAG-darwin.zip
+  - goobox-sync-storj-$TRAVIS_TAG-linux64.zip
   on:
     tags: true
     repo: GooBox/goobox-sync-storj
