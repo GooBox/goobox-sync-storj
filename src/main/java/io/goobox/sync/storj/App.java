@@ -265,7 +265,7 @@ public class App implements ShutdownListener {
                     }
                 });
             } catch (KeysNotFoundException e) {
-                logger.error("keyfile not found at the expected dir " + Utils.getDataDir().toFile());
+                logger.info("No keys found at {}. Waiting for keys to be imported.", Utils.getDataDir().toFile());
                 latch.countDown();
             }
 
