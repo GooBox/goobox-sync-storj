@@ -154,22 +154,8 @@ public class App implements ShutdownListener {
         storj.setConfigDirectory(Utils.getDataDir().toFile());
         storj.setDownloadDirectory(syncDir.toFile());
 
-        // try another dir
-        if (! storj.keysExist() && "Linux".equals(System.getProperty("os.name"))) {
-            Path old = Paths.get(System.getProperty("user.home"), ".storj", "api.storj.io.json");
-            System.out.println(old.toString());
-            if (old.toFile().exists()) {
-                logger.info("copying key file to the new dir");
-                try {
-                    Path copy = Paths.get(Utils.getDataDir().toString(), "api.storj.io.json");
-                    Files.copy(old, copy, REPLACE_EXISTING);
-                    storj.setConfigDirectory(Utils.getDataDir().toFile());
-                } catch (IOException e) {}
-            }
-        }
-
         if (!storj.keysExist()) {
-            logger.error("key not exists");
+            logger.error("keyfile not found at the expected dir " + Utils.getDataDir().toFile());
             System.exit(1);
         }
 
