@@ -1,2 +1,0 @@
-#!/bin/bash
-java -Djava.library.path=. -jar goobox-sync-storj-0.0.26.jar
