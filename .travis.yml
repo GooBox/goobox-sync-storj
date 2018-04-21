@@ -37,7 +37,7 @@ before_deploy:
 # Prepare a package for Linux
 - mkdir -p java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so
 - curl -sSL https://github.com/storj/java-libstorj/releases/download/$JAVA_LIBSTORJ_VERSION/java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so.tar.gz | tar -zxv -C java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so
-- zip -j goobox-sync-storj-$TRAVIS_TAG-linux64.zip java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so/* src/main/resources/linux64/goobox-sync-storj target/goobox-sync-storj-$TRAVIS_TAG.jar
+- zip -j goobox-sync-storj-$TRAVIS_TAG-linux64.zip java-libstorj-$JAVA_LIBSTORJ_VERSION-linux64-so/* src/main/resources/goobox-sync-storj target/goobox-sync-storj-$TRAVIS_TAG.jar
 deploy:
   provider: releases
   api_key:
