@@ -44,6 +44,7 @@ public class CheckStateTask implements Runnable {
 
     private Bucket gooboxBucket;
     private TaskQueue tasks;
+    private static boolean isSync;
 
     public CheckStateTask() {
         this.gooboxBucket = App.getInstance().getGooboxBucket();
@@ -59,8 +60,6 @@ public class CheckStateTask implements Runnable {
         }
 
         logger.info("Checking for changes");
-        App.getInstance().getIpcExecutor().sendSyncEvent();
-        App.getInstance().getOverlayHelper().setSynchronizing();
 
         App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
@@ -70,10 +69,12 @@ public class CheckStateTask implements Runnable {
                 DB.commit();
 
                 if (tasks.isEmpty()) {
+                    if (isSync == true) {
+                        updateIdleEvent();
+                    }
+
                     // Sleep some time to avoid overloading the bridge
                     tasks.add(new SleepTask());
-                    App.getInstance().getIpcExecutor().sendIdleEvent();
-                    App.getInstance().getOverlayHelper().setOK();
                 }
                 // Add itself to the queueAdd itself to the queue
                 tasks.add(CheckStateTask.this);
@@ -256,26 +257,31 @@ public class CheckStateTask implements Runnable {
 
     private void addForDownload(File file) {
         DB.addForDownload(file);
+        updateSyncEvent();
         tasks.add(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForDownload(File file, Path path) throws IOException {
         DB.addForDownload(file, path);
+        updateSyncEvent();
         tasks.add(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForUpload(Path path) throws IOException {
         DB.addForUpload(path);
+        updateSyncEvent();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void addForUpload(File file, Path path) throws IOException {
         DB.addForUpload(file, path);
+        updateSyncEvent();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void setForCloudDelete(File file) {
         DB.setForCloudDelete(file);
+        updateSyncEvent();
         tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
     }
 
@@ -291,6 +297,7 @@ public class CheckStateTask implements Runnable {
 
     private void addForCloudCreateDir(Path path) throws IOException {
         DB.addForCloudCreateDir(path);
+        updateSyncEvent();
         tasks.add(new CreateCloudDirTask(gooboxBucket, path));
     }
 
@@ -303,6 +310,20 @@ public class CheckStateTask implements Runnable {
                 DB.remove(fileName);
             }
         }
+    }
+
+    private void updateSyncEvent() {
+        if (isSync == false) {
+            App.getInstance().getIpcExecutor().sendSyncEvent();
+            App.getInstance().getOverlayHelper().setSynchronizing();
+            isSync = true;
+        }
+    }
+
+    private void updateIdleEvent() {
+        App.getInstance().getIpcExecutor().sendIdleEvent();
+        App.getInstance().getOverlayHelper().setOK();
+        isSync = false;
     }
 
 }
