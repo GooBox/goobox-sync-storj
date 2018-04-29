@@ -26,6 +26,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,8 @@ public class CheckStateTask implements Runnable {
 
         logger.info("Checking for changes");
 
+        final CountDownLatch latch = new CountDownLatch(1);
+
         App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
             public void onFilesReceived(String bucketId, File[] files) {
@@ -78,6 +81,7 @@ public class CheckStateTask implements Runnable {
                 }
                 // Add itself to the queueAdd itself to the queue
                 tasks.add(CheckStateTask.this);
+                latch.countDown();
             }
 
             @Override
@@ -86,13 +90,22 @@ public class CheckStateTask implements Runnable {
                 // wait 3 seconds before trying again
                 try {
                     Thread.sleep(3000);
+                    tasks.add(CheckStateTask.this);
                 } catch (InterruptedException e) {
                     // interrupted - stop execution
                     return;
+                } finally {
+                    latch.countDown();
                 }
-                tasks.add(CheckStateTask.this);
             }
         });
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            // interrupted - stop execution
+            return;
+        }
     }
 
     private void processFiles(File[] files) {
