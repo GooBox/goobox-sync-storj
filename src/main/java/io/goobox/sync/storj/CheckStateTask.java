@@ -323,20 +323,20 @@ public class CheckStateTask implements Runnable {
         }
     }
 
-	private void setSynchronizing() {
-		if (idle) {
-			App.getInstance().getIpcExecutor().sendSyncEvent();
-			App.getInstance().getOverlayHelper().setSynchronizing();
-			idle = false;
-		}
-	}
+    private void setSynchronizing() {
+        if (idle) {
+            App.getInstance().getIpcExecutor().sendSyncEvent();
+            App.getInstance().getOverlayHelper().setSynchronizing();
+            idle = false;
+        }
+    }
 
-	private void setIdle() {
-		if (!idle) {
-			App.getInstance().getIpcExecutor().sendIdleEvent();
-			App.getInstance().getOverlayHelper().setOK();
-			idle = true;
-		}
-	}
+    private void setIdle() {
+        if (!idle) {
+            App.getInstance().getIpcExecutor().sendIdleEvent();
+            App.getInstance().getOverlayHelper().setOK();
+            idle = true;
+        }
+    }
 
 }
