@@ -45,7 +45,7 @@ public class CheckStateTask implements Runnable {
 
     private Bucket gooboxBucket;
     private TaskQueue tasks;
-    private static boolean isSync;
+    private static boolean idle;
 
     public CheckStateTask() {
         this.gooboxBucket = App.getInstance().getGooboxBucket();
@@ -72,9 +72,7 @@ public class CheckStateTask implements Runnable {
                 DB.commit();
 
                 if (tasks.isEmpty()) {
-                    if (isSync == true) {
-                        updateIdleEvent();
-                    }
+                    setIdle();
 
                     // Sleep some time to avoid overloading the bridge
                     tasks.add(new SleepTask());
@@ -270,31 +268,31 @@ public class CheckStateTask implements Runnable {
 
     private void addForDownload(File file) {
         DB.addForDownload(file);
-        updateSyncEvent();
+        setSynchronizing();
         tasks.add(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForDownload(File file, Path path) throws IOException {
         DB.addForDownload(file, path);
-        updateSyncEvent();
+        setSynchronizing();
         tasks.add(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForUpload(Path path) throws IOException {
         DB.addForUpload(path);
-        updateSyncEvent();
+        setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void addForUpload(File file, Path path) throws IOException {
         DB.addForUpload(file, path);
-        updateSyncEvent();
+        setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void setForCloudDelete(File file) {
         DB.setForCloudDelete(file);
-        updateSyncEvent();
+        setSynchronizing();
         tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
     }
 
@@ -310,7 +308,7 @@ public class CheckStateTask implements Runnable {
 
     private void addForCloudCreateDir(Path path) throws IOException {
         DB.addForCloudCreateDir(path);
-        updateSyncEvent();
+        setSynchronizing();
         tasks.add(new CreateCloudDirTask(gooboxBucket, path));
     }
 
@@ -325,18 +323,20 @@ public class CheckStateTask implements Runnable {
         }
     }
 
-    private void updateSyncEvent() {
-        if (isSync == false) {
-            App.getInstance().getIpcExecutor().sendSyncEvent();
-            App.getInstance().getOverlayHelper().setSynchronizing();
-            isSync = true;
-        }
-    }
+	private void setSynchronizing() {
+		if (idle) {
+			App.getInstance().getIpcExecutor().sendSyncEvent();
+			App.getInstance().getOverlayHelper().setSynchronizing();
+			idle = false;
+		}
+	}
 
-    private void updateIdleEvent() {
-        App.getInstance().getIpcExecutor().sendIdleEvent();
-        App.getInstance().getOverlayHelper().setOK();
-        isSync = false;
-    }
+	private void setIdle() {
+		if (!idle) {
+			App.getInstance().getIpcExecutor().sendIdleEvent();
+			App.getInstance().getOverlayHelper().setOK();
+			idle = true;
+		}
+	}
 
 }
