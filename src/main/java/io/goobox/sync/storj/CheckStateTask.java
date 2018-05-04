@@ -26,6 +26,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class CheckStateTask implements Runnable {
 
     private Bucket gooboxBucket;
     private TaskQueue tasks;
+    private static boolean idle;
 
     public CheckStateTask() {
         this.gooboxBucket = App.getInstance().getGooboxBucket();
@@ -59,8 +61,8 @@ public class CheckStateTask implements Runnable {
         }
 
         logger.info("Checking for changes");
-        App.getInstance().getIpcExecutor().sendSyncEvent();
-        App.getInstance().getOverlayHelper().setSynchronizing();
+
+        final CountDownLatch latch = new CountDownLatch(1);
 
         App.getInstance().getStorj().listFiles(gooboxBucket, new ListFilesCallback() {
             @Override
@@ -70,13 +72,14 @@ public class CheckStateTask implements Runnable {
                 DB.commit();
 
                 if (tasks.isEmpty()) {
+                    setIdle();
+
                     // Sleep some time to avoid overloading the bridge
                     tasks.add(new SleepTask());
-                    App.getInstance().getIpcExecutor().sendIdleEvent();
-                    App.getInstance().getOverlayHelper().setOK();
                 }
                 // Add itself to the queueAdd itself to the queue
                 tasks.add(CheckStateTask.this);
+                latch.countDown();
             }
 
             @Override
@@ -85,13 +88,22 @@ public class CheckStateTask implements Runnable {
                 // wait 3 seconds before trying again
                 try {
                     Thread.sleep(3000);
+                    tasks.add(CheckStateTask.this);
                 } catch (InterruptedException e) {
                     // interrupted - stop execution
                     return;
+                } finally {
+                    latch.countDown();
                 }
-                tasks.add(CheckStateTask.this);
             }
         });
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            // interrupted - stop execution
+            return;
+        }
     }
 
     private void processFiles(File[] files) {
@@ -256,26 +268,31 @@ public class CheckStateTask implements Runnable {
 
     private void addForDownload(File file) {
         DB.addForDownload(file);
+        setSynchronizing();
         tasks.add(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForDownload(File file, Path path) throws IOException {
         DB.addForDownload(file, path);
+        setSynchronizing();
         tasks.add(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForUpload(Path path) throws IOException {
         DB.addForUpload(path);
+        setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void addForUpload(File file, Path path) throws IOException {
         DB.addForUpload(file, path);
+        setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void setForCloudDelete(File file) {
         DB.setForCloudDelete(file);
+        setSynchronizing();
         tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
     }
 
@@ -291,6 +308,7 @@ public class CheckStateTask implements Runnable {
 
     private void addForCloudCreateDir(Path path) throws IOException {
         DB.addForCloudCreateDir(path);
+        setSynchronizing();
         tasks.add(new CreateCloudDirTask(gooboxBucket, path));
     }
 
@@ -302,6 +320,22 @@ public class CheckStateTask implements Runnable {
             if (storjFile == null && localPath == null) {
                 DB.remove(fileName);
             }
+        }
+    }
+
+    private void setSynchronizing() {
+        if (idle) {
+            App.getInstance().getIpcExecutor().sendSyncEvent();
+            App.getInstance().getOverlayHelper().setSynchronizing();
+            idle = false;
+        }
+    }
+
+    private void setIdle() {
+        if (!idle) {
+            App.getInstance().getIpcExecutor().sendIdleEvent();
+            App.getInstance().getOverlayHelper().setOK();
+            idle = true;
         }
     }
 
