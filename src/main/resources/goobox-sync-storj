@@ -1,2 +1,2 @@
 #!/bin/bash
-java -Djava.library.path=. $GOOBOX_SYNC_STORJ_OPTS -jar goobox-sync-storj-0.0.26.jar
+java -Djava.library.path=. $GOOBOX_SYNC_STORJ_OPTS -jar goobox-sync-storj-0.0.27.jar

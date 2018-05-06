@@ -14,7 +14,7 @@ set APP_BASE_NAME=%~n0
 set APP_HOME=%DIRNAME%
 
 @rem goobox-sync-storj app version
-set GOOBOX_SYNC_STORJ_VERSION=0.0.26
+set GOOBOX_SYNC_STORJ_VERSION=0.0.27
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and GOOBOX_SYNC_STORJ_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS=-XX:+CreateMinidumpOnCrash -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y
