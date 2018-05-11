@@ -38,6 +38,7 @@ public class UploadFileTask implements Runnable {
     private Bucket bucket;
     private Path path;
     private String fileName;
+    private Long uploadPointer;
 
     public UploadFileTask(Bucket bucket, Path path) {
         this.bucket = bucket;
@@ -61,12 +62,19 @@ public class UploadFileTask implements Runnable {
         while (repeat[0]) {
             final CountDownLatch latch = new CountDownLatch(1);
 
-            App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
+            uploadPointer = App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
                 @Override
                 public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                     String progressMessage = String.format("  %3d%% %15d/%d bytes",
                             (int) (progress * 100), uploadedBytes, totalBytes);
                     logger.info(progressMessage);
+
+                    // user might have delete large file during uploading. so we check this situation to ensure cancelling is possible
+                    java.io.File file = path.toFile();
+                    if (!file.exists()) {
+                        logger.debug("file is deleted, cancelling upload");
+                        cancelUpload(uploadPointer);
+                    }
                 }
 
                 @Override
@@ -175,6 +183,11 @@ public class UploadFileTask implements Runnable {
                 Thread.sleep(3000);
             }
         }
+    }
+
+    public boolean cancelUpload(Long id) {
+        logger.info("canceling upload");
+        return App.getInstance().getStorj().cancelUpload(id);
     }
 
 }
