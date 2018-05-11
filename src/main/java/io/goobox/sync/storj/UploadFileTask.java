@@ -72,7 +72,7 @@ public class UploadFileTask implements Runnable {
                     // user might have delete large file during uploading. so we check this situation to ensure cancelling is possible
                     java.io.File file = path.toFile();
                     if (!file.exists()) {
-                        logger.debug("file is deleted, cancelling upload");
+                        logger.debug("file is not exists (rename, delete or moved), cancelling upload");
                         cancelUpload(uploadPointer);
                     }
                 }
