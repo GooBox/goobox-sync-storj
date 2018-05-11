@@ -279,12 +279,22 @@ public class CheckStateTask implements Runnable {
     }
 
     private void addForUpload(Path path) throws IOException {
+        // noop
+        if (Files.size(path) == 0) {
+            logger.info("empty file {} skip uploading", path);
+            return;
+        }
         DB.addForUpload(path);
         setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void addForUpload(File file, Path path) throws IOException {
+        // noop
+        if (Files.size(path) == 0) {
+            logger.info("empty file {} skip uploading", path);
+            return;
+        }
         DB.addForUpload(file, path);
         setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
