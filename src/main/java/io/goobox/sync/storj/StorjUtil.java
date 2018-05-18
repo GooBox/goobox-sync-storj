@@ -82,7 +82,7 @@ public class StorjUtil {
             if (Files.size(path) == 0) {
                 return true;
             }
-         } catch (IOException e) {
+        } catch (IOException e) {
             return true;
         }
 
