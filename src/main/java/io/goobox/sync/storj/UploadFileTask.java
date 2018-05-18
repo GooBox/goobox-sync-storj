@@ -17,6 +17,7 @@
 package io.goobox.sync.storj;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
@@ -38,6 +39,7 @@ public class UploadFileTask implements Runnable {
     private Bucket bucket;
     private Path path;
     private String fileName;
+    private long uploadState;
 
     public UploadFileTask(Bucket bucket, Path path) {
         this.bucket = bucket;
@@ -61,12 +63,18 @@ public class UploadFileTask implements Runnable {
         while (repeat[0]) {
             final CountDownLatch latch = new CountDownLatch(1);
 
-            App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
+            uploadState = App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
                 @Override
                 public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                     String progressMessage = String.format("  %3d%% %15d/%d bytes",
                             (int) (progress * 100), uploadedBytes, totalBytes);
                     logger.info(progressMessage);
+
+                    // user might have delete large file during uploading. so we check this situation to ensure canceling is possible
+                    if (!Files.exists(path)) {
+                        logger.info("File {} does not exist anymore (renamed, deleted or moved). Canceling upload.", path);
+                        App.getInstance().getStorj().cancelUpload(uploadState);
+                    }
                 }
 
                 @Override
