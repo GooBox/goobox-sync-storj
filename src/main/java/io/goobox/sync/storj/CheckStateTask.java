@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 import io.goobox.sync.storj.db.SyncFile;
 import io.goobox.sync.storj.db.SyncState;
@@ -183,7 +182,7 @@ public class CheckStateTask implements Runnable {
                     } else {
                         setForLocalDelete(path);
                     }
-                } else if (!Utils.isExcluded(path)) {
+                } else if (!StorjUtil.isExcluded(path)) {
                     if (Files.isDirectory(path)) {
                         addForCloudCreateDir(path);
                     } else {
@@ -279,22 +278,12 @@ public class CheckStateTask implements Runnable {
     }
 
     private void addForUpload(Path path) throws IOException {
-        // noop
-        if (Files.size(path) == 0) {
-            logger.info("empty file {} skip uploading", path);
-            return;
-        }
         DB.addForUpload(path);
         setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
     }
 
     private void addForUpload(File file, Path path) throws IOException {
-        // noop
-        if (Files.size(path) == 0) {
-            logger.info("empty file {} skip uploading", path);
-            return;
-        }
         DB.addForUpload(file, path);
         setSynchronizing();
         tasks.add(new UploadFileTask(gooboxBucket, path));
