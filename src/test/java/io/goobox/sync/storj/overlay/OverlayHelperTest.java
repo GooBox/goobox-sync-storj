@@ -16,6 +16,8 @@
  */
 package io.goobox.sync.storj.overlay;
 
+import java.io.IOException;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -91,6 +93,11 @@ public class OverlayHelperTest {
         DB.addForUpload(StorjMock.FILE_1, FileMock.FILE_1.getPath());
 
         Assert.assertEquals(OverlayIcon.SYNCING.id(), getIconId(FileMock.FILE_1));
+    }
+
+    @Test
+    public void emptyFileUpload() throws IOException {
+        Assert.assertEquals(OverlayIcon.NONE.id(), getIconId(FileMock.FILE_EMPTY));
     }
 
     @Test

@@ -1610,4 +1610,14 @@ public class CheckStateTaskTest {
         AssertState.assertSleepEmptyDB();
     }
 
+    @Test
+    public void emptyFileNoCloud() throws Exception {
+        new StorjMock();
+        new FilesMock(FileMock.FILE_EMPTY);
+
+        new CheckStateTask().run();
+
+        AssertState.assertSleepEmptyDB();
+    }
+
 }

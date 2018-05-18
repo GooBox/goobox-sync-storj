@@ -16,6 +16,7 @@
  */
 package io.goobox.sync.storj;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
@@ -23,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import io.goobox.sync.common.Utils;
 import io.storj.libstorj.Storj;
 
 public class StorjUtil {
@@ -69,6 +71,22 @@ public class StorjUtil {
         default:
             return false;
         }
+    }
+
+    public static boolean isExcluded(Path path) {
+        if (Utils.isExcluded(path)) {
+            return true;
+        }
+
+        try {
+            if (Files.size(path) == 0) {
+                return true;
+            }
+        } catch (IOException e) {
+            return true;
+        }
+
+        return false;
     }
 
 }
