@@ -26,6 +26,7 @@ public class FileMock {
 
     public static final FileMock FILE_1 = new FileMock("file-1-name", 1510243787000L, 12345, false);
     public static final FileMock FILE_2 = new FileMock("file-2-name", 1510667191000L, 983249, false);
+    public static final FileMock FILE_EMPTY = new FileMock("file-3-name", 1510667191000L, 0, false);
     public static final FileMock ENCRYPTED_FILE = new FileMock("encrypted-file-name", 1510566682000L, 23423313, false);
     public static final FileMock EXCLUDED_FILE = new FileMock("~$excluded.txt", 1512921930000L, 6532, false);
     public static final FileMock MODIFIED_FILE_1 = new FileMock("file-1-name", 1510739536000L, 12653, false);
