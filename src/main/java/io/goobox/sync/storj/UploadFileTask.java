@@ -73,7 +73,7 @@ public class UploadFileTask implements Runnable {
                     // user might have delete large file during uploading. so we check this situation to ensure canceling is possible
                     if (!Files.exists(path)) {
                         logger.info("File {} does not exist anymore (renamed, deleted or moved). Canceling upload.", path);
-                        cancelUpload(uploadState);
+                        App.getInstance().getStorj().cancelUpload(uploadState);
                     }
                 }
 
@@ -183,10 +183,6 @@ public class UploadFileTask implements Runnable {
                 Thread.sleep(3000);
             }
         }
-    }
-
-    public boolean cancelUpload(Long id) {
-        return App.getInstance().getStorj().cancelUpload(id);
     }
 
 }
