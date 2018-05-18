@@ -73,12 +73,16 @@ public class StorjUtil {
         }
     }
 
-    public static boolean isExcluded(Path path) throws IOException {
+    public static boolean isExcluded(Path path) {
         if (Utils.isExcluded(path)) {
             return true;
         }
 
-        if (Files.size(path) == 0) {
+        try {
+            if (Files.size(path) == 0) {
+                return true;
+            }
+         } catch (IOException e) {
             return true;
         }
 

@@ -16,7 +16,6 @@
  */
 package io.goobox.sync.storj.overlay;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import io.goobox.sync.common.overlay.OverlayIcon;
@@ -29,11 +28,9 @@ public class StorjOverlayIconProvider implements OverlayIconProvider {
 
     @Override
     public OverlayIcon getIcon(Path path) {
-        try {
-            if (StorjUtil.isExcluded(path)) {
-                return OverlayIcon.NONE;
-            }
-        } catch (IOException e) {}
+        if (StorjUtil.isExcluded(path)) {
+            return OverlayIcon.NONE;
+        }
 
         SyncFile file = DB.get(path);
         if (file == null || file.getState().isPending()) {
