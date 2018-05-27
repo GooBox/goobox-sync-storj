@@ -19,11 +19,13 @@ package io.goobox.sync.storj;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.goobox.sync.common.Utils;
 import io.goobox.sync.storj.db.DB;
 import io.storj.libstorj.Bucket;
 import io.storj.libstorj.DeleteFileCallback;
@@ -59,11 +61,21 @@ public class UploadFileTask implements Runnable {
         logger.info("Uploading file {}", fileName);
 
         final boolean repeat[] = { true };
+        Path tmpDir = null;
+        Path tmpPath = null;
+
+        try {
+            tmpDir = Files.createTempDirectory(Utils.getSyncDir(), ".~");
+            tmpPath = Files.createTempFile(tmpDir, "file", ".tmp");
+            Files.copy(path, tmpPath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e1) {
+            logger.info("file {} removed during temporary file creation?", path);
+        }
 
         while (repeat[0]) {
             final CountDownLatch latch = new CountDownLatch(1);
 
-            uploadState = App.getInstance().getStorj().uploadFile(bucket, fileName, path.toString(), new UploadFileCallback() {
+            uploadState = App.getInstance().getStorj().uploadFile(bucket, fileName, tmpPath.toString(), new UploadFileCallback() {
                 @Override
                 public void onProgress(String filePath, double progress, long uploadedBytes, long totalBytes) {
                     String progressMessage = String.format("  %3d%% %15d/%d bytes",
@@ -121,6 +133,11 @@ public class UploadFileTask implements Runnable {
             } catch (InterruptedException e) {
                 // interrupted - stop execution
                 return;
+            } finally {
+                try {
+                    Files.deleteIfExists(tmpPath);
+                    Files.deleteIfExists(tmpDir);
+                } catch (IOException e) { }
             }
         }
     }
