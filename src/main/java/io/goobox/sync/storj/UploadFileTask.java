@@ -68,8 +68,13 @@ public class UploadFileTask implements Runnable {
             tmpDir = Files.createTempDirectory(Utils.getSyncDir(), ".~");
             tmpPath = Files.createTempFile(tmpDir, "file", ".tmp");
             Files.copy(path, tmpPath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e1) {
+        } catch (IOException e) {
             logger.info("file {} removed during temporary file creation?", path);
+            logger.info("", e);
+            try {
+                Files.delete(tmpPath);
+                Files.delete(tmpDir);
+            } catch (IOException e1) {}
         }
 
         while (repeat[0]) {
@@ -135,8 +140,8 @@ public class UploadFileTask implements Runnable {
                 return;
             } finally {
                 try {
-                    Files.deleteIfExists(tmpPath);
-                    Files.deleteIfExists(tmpDir);
+                    Files.delete(tmpPath);
+                    Files.delete(tmpDir);
                 } catch (IOException e) { }
             }
         }
