@@ -85,7 +85,8 @@ public class FileWatcher extends Thread implements DirectoryChangeListener {
                             lastEventTime = 0;
                             logger.info("3 seconds after the last file event");
                             App.getInstance().getTaskQueue().add(new CheckStateTask());
-                            App.getInstance().getTaskExecutor().interruptSleeping();
+                            //App.getInstance().getTaskExecutor().interruptSleeping();
+                            //App.getInstance().getStorjExecutorService().interruptSleeping();
                         }
                     }
                 }
