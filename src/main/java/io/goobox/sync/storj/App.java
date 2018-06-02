@@ -47,15 +47,19 @@ public class App implements ShutdownListener {
 
     private static App instance;
 
+    private static int NUM_THREADS = 1;
+
     private Path syncDir;
 
     private Storj storj;
     private Bucket gooboxBucket;
     private TaskQueue tasks;
-    private TaskExecutor taskExecutor;
+    //private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
     private IpcExecutor ipcExecutor;
     private OverlayHelper overlayHelper;
+
+    private StorjExecutorService storjExecutorService;
 
     public App() {
         this.syncDir = Utils.getSyncDir();
@@ -134,9 +138,11 @@ public class App implements ShutdownListener {
         return tasks;
     }
 
+    /*
     public TaskExecutor getTaskExecutor() {
         return taskExecutor;
     }
+    */
 
     public FileWatcher getFileWatcher() {
         return fileWatcher;
@@ -144,6 +150,10 @@ public class App implements ShutdownListener {
 
     public OverlayHelper getOverlayHelper() {
         return overlayHelper;
+    }
+
+    public StorjExecutorService getStorjExecutorService() {
+        return storjExecutorService;
     }
 
     private void init(boolean resetAuthFile) {
@@ -176,11 +186,12 @@ public class App implements ShutdownListener {
         tasks = new TaskQueue();
         tasks.add(new CheckStateTask());
 
-        taskExecutor = new TaskExecutor(tasks);
+        //taskExecutor = new TaskExecutor(tasks);
         fileWatcher = new FileWatcher();
 
         fileWatcher.start();
-        taskExecutor.start();
+        storjExecutorService = new StorjExecutorService(NUM_THREADS, tasks);
+        //taskExecutor.start();
     }
 
     @Override
@@ -189,6 +200,10 @@ public class App implements ShutdownListener {
 
         if (overlayHelper != null) {
             overlayHelper.shutdown();
+        }
+
+        if (storjExecutorService != null) {
+            storjExecutorService.shutdownNow();
         }
 
         System.exit(0);
