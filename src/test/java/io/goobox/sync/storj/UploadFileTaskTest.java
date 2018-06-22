@@ -59,7 +59,7 @@ public class UploadFileTaskTest {
 
         new UploadFileTask(StorjMock.BUCKET, FileMock.FILE_1.getPath()).run();
 
-        //AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
+        AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class UploadFileTaskTest {
 
         new UploadFileTask(StorjMock.BUCKET, FileMock.FILE_1.getPath()).run();
 
-        //AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
+        AssertState.assertDB(StorjMock.FILE_1, FileMock.FILE_1, SyncState.SYNCED);
     }
 
     @Test
