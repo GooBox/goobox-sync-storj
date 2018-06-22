@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
 import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
@@ -61,20 +63,17 @@ public class UploadFileTask implements Runnable {
         logger.info("Uploading file {}", fileName);
 
         final boolean repeat[] = { true };
-        Path tmpDir = null;
         Path tmpPath = null;
 
         try {
-            tmpDir = Files.createTempDirectory(Utils.getSyncDir(), ".~");
-            tmpPath = Files.createTempFile(tmpDir, "file", ".tmp");
+            tmpPath = Files.createTempFile("file", ".tmp", new FileAttribute<?>[0]);
             Files.copy(path, tmpPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            logger.info("file {} removed during temporary file creation?", path);
-            logger.info("", e);
+            logger.info("file {} removed during temporary file creation?", path, e);
             try {
                 Files.delete(tmpPath);
-                Files.delete(tmpDir);
             } catch (IOException e1) {}
+            return;
         }
 
         while (repeat[0]) {
@@ -141,7 +140,6 @@ public class UploadFileTask implements Runnable {
             } finally {
                 try {
                     Files.delete(tmpPath);
-                    Files.delete(tmpDir);
                 } catch (IOException e) { }
             }
         }
