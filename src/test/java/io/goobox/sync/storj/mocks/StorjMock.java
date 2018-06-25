@@ -161,7 +161,12 @@ public class StorjMock extends MockUp<Storj> {
             files.add(SUB_SUB_FILE);
             callback.onComplete(localPath, SUB_SUB_FILE);
         } else {
-            callback.onError(localPath, Storj.ENOENT, "error uploading");
+            if (localPath.endsWith(".tmp") && !fileName.equals(FILE_2.getName())) {
+                files.add(FILE_1);
+                callback.onComplete(localPath, FILE_1);
+            } else {
+                callback.onError(localPath, Storj.ENOENT, "error uploading");
+            }
         }
         return 0;
     }
