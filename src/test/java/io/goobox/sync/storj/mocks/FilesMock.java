@@ -164,7 +164,7 @@ public class FilesMock extends MockUp<Files> {
 
     @Mock
     public Path copy(Path source, Path target, CopyOption... options) throws IOException {
-        return Files.copy(source, target, options);
+        return null;
     }
 
     public void modifyFile(FileMock oldFile, FileMock newFile) {
