@@ -64,7 +64,7 @@ public class UploadFileTask implements Runnable {
         Path tmpPath = null;
 
         try {
-            tmpPath = Files.createTempFile("file", ".tmp", new FileAttribute<?>[0]);
+            tmpPath = Files.createTempFile("file", ".tmp");
             Files.copy(path, tmpPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             logger.info("file {} removed during temporary file creation?", path, e);
