@@ -17,6 +17,7 @@
 package io.goobox.sync.storj.mocks;
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitOption;
@@ -159,6 +160,11 @@ public class FilesMock extends MockUp<Files> {
         return Stream.of(files.toArray(new FileMock[files.size()]))
                 .map(FileMock::getPath)
                 .filter(p -> p.startsWith(start));
+    }
+
+    @Mock
+    public Path copy(Path source, Path target, CopyOption... options) throws IOException {
+        return null;
     }
 
     public void modifyFile(FileMock oldFile, FileMock newFile) {
