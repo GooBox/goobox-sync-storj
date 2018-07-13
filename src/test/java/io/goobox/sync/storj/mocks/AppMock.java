@@ -16,9 +16,12 @@
  */
 package io.goobox.sync.storj.mocks;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 import io.goobox.sync.common.overlay.OverlayHelper;
 import io.goobox.sync.storj.App;
 import io.goobox.sync.storj.FileWatcher;
+import io.goobox.sync.storj.StorjExecutorService;
 import io.goobox.sync.storj.TaskQueue;
 import io.goobox.sync.storj.ipc.IpcExecutor;
 import io.goobox.sync.storj.overlay.StorjOverlayIconProvider;
@@ -36,6 +39,7 @@ public class AppMock extends MockUp<App> {
     private FileWatcher fileWatcher = new FileWatcher();
     private OverlayHelper overlayHelper = new OverlayHelper(
             instance.getSyncDir(), new StorjOverlayIconProvider());
+    private StorjExecutorService storjExecutorService = new StorjExecutorService(1, new LinkedBlockingQueue<Runnable>());
 
     @Mock
     public App getInstance() {
@@ -73,6 +77,11 @@ public class AppMock extends MockUp<App> {
     @Mock
     public OverlayHelper getOverlayHelper() {
         return overlayHelper;
+    }
+
+    @Mock
+    public StorjExecutorService getStorjExecutorService() {
+        return storjExecutorService;
     }
 
 }

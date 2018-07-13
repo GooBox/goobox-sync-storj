@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -28,6 +29,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
 
 import io.goobox.sync.common.ShutdownListener;
 import io.goobox.sync.common.Utils;
@@ -47,14 +50,14 @@ public class App implements ShutdownListener {
 
     private static App instance;
 
-    private static int NUM_THREADS = 1;
+    private static int NUM_THREADS = Optional.of(Runtime.getRuntime().availableProcessors()).or(1);
 
     private Path syncDir;
 
     private Storj storj;
     private Bucket gooboxBucket;
     private TaskQueue tasks;
-    //private TaskExecutor taskExecutor;
+    private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
     private IpcExecutor ipcExecutor;
     private OverlayHelper overlayHelper;
@@ -138,11 +141,9 @@ public class App implements ShutdownListener {
         return tasks;
     }
 
-    /*
     public TaskExecutor getTaskExecutor() {
         return taskExecutor;
     }
-    */
 
     public FileWatcher getFileWatcher() {
         return fileWatcher;
@@ -186,12 +187,13 @@ public class App implements ShutdownListener {
         tasks = new TaskQueue();
         tasks.add(new CheckStateTask());
 
-        //taskExecutor = new TaskExecutor(tasks);
+        taskExecutor = new TaskExecutor(tasks);
         fileWatcher = new FileWatcher();
 
+        storjExecutorService = new StorjExecutorService(NUM_THREADS, new LinkedBlockingQueue<Runnable>());
+
         fileWatcher.start();
-        storjExecutorService = new StorjExecutorService(NUM_THREADS, tasks);
-        //taskExecutor.start();
+        taskExecutor.start();
     }
 
     @Override
@@ -204,6 +206,7 @@ public class App implements ShutdownListener {
 
         if (storjExecutorService != null) {
             storjExecutorService.shutdownNow();
+            logger.info("Storj executor service shutdown");
         }
 
         System.exit(0);

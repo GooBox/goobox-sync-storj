@@ -268,47 +268,47 @@ public class CheckStateTask implements Runnable {
     private void addForDownload(File file) {
         DB.addForDownload(file);
         setSynchronizing();
-        tasks.add(new DownloadFileTask(gooboxBucket, file));
+        App.getInstance().getStorjExecutorService().execute(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForDownload(File file, Path path) throws IOException {
         DB.addForDownload(file, path);
         setSynchronizing();
-        tasks.add(new DownloadFileTask(gooboxBucket, file));
+        App.getInstance().getStorjExecutorService().execute(new DownloadFileTask(gooboxBucket, file));
     }
 
     private void addForUpload(Path path) throws IOException {
         DB.addForUpload(path);
         setSynchronizing();
-        tasks.add(new UploadFileTask(gooboxBucket, path));
+        App.getInstance().getStorjExecutorService().execute(new UploadFileTask(gooboxBucket, path));
     }
 
     private void addForUpload(File file, Path path) throws IOException {
         DB.addForUpload(file, path);
         setSynchronizing();
-        tasks.add(new UploadFileTask(gooboxBucket, path));
+        App.getInstance().getStorjExecutorService().execute(new UploadFileTask(gooboxBucket, path));
     }
 
     private void setForCloudDelete(File file) {
         DB.setForCloudDelete(file);
         setSynchronizing();
-        tasks.add(new DeleteCloudFileTask(gooboxBucket, file));
+        App.getInstance().getStorjExecutorService().execute(new DeleteCloudFileTask(gooboxBucket, file));
     }
 
     private void setForLocalDelete(Path path) throws IOException {
         DB.setForLocalDelete(path);
-        tasks.add(new DeleteLocalFileTask(path));
+        App.getInstance().getStorjExecutorService().execute(new DeleteLocalFileTask(path));
     }
 
     private void addForLocalCreateDir(File file) throws IOException {
         DB.addForLocalCreateDir(file);
-        tasks.add(new CreateLocalDirTask(file));
+        App.getInstance().getStorjExecutorService().execute(new CreateLocalDirTask(file));
     }
 
     private void addForCloudCreateDir(Path path) throws IOException {
         DB.addForCloudCreateDir(path);
         setSynchronizing();
-        tasks.add(new CreateCloudDirTask(gooboxBucket, path));
+        App.getInstance().getStorjExecutorService().execute(new CreateCloudDirTask(gooboxBucket, path));
     }
 
     private void cleanDeletedFilesFromDB(File[] files, List<Path> localPaths) {
