@@ -57,7 +57,7 @@ public class App implements ShutdownListener {
     private Storj storj;
     private Bucket gooboxBucket;
     private TaskQueue tasks;
-    //private TaskExecutor taskExecutor;
+    private TaskExecutor taskExecutor;
     private FileWatcher fileWatcher;
     private IpcExecutor ipcExecutor;
     private OverlayHelper overlayHelper;
@@ -141,11 +141,9 @@ public class App implements ShutdownListener {
         return tasks;
     }
 
-    /*
     public TaskExecutor getTaskExecutor() {
         return taskExecutor;
     }
-    */
 
     public FileWatcher getFileWatcher() {
         return fileWatcher;
@@ -189,14 +187,13 @@ public class App implements ShutdownListener {
         tasks = new TaskQueue();
         tasks.add(new CheckStateTask());
 
-        //taskExecutor = new TaskExecutor(tasks);
+        taskExecutor = new TaskExecutor(tasks);
         fileWatcher = new FileWatcher();
 
         storjExecutorService = new StorjExecutorService(NUM_THREADS, new LinkedBlockingQueue<Runnable>());
 
         fileWatcher.start();
-        storjExecutorService = new StorjExecutorService(NUM_THREADS, tasks);
-        //taskExecutor.start();
+        taskExecutor.start();
     }
 
     @Override

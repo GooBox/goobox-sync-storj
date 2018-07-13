@@ -24,12 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StorjExecutorService extends ThreadPoolExecutor {
-	
-	private static final Logger logger = LoggerFactory.getLogger(StorjExecutorService.class);
-	
-	public StorjExecutorService(int processors, LinkedBlockingQueue<Runnable> linkedBlockingQueue) {
-		super(processors, processors, 60, TimeUnit.SECONDS, linkedBlockingQueue);
-		logger.info("started StorjExecutorService with {} threads", processors);
-	}
+
+    private static final Logger logger = LoggerFactory.getLogger(StorjExecutorService.class);
+
+    public StorjExecutorService(int processors, LinkedBlockingQueue<Runnable> linkedBlockingQueue) {
+        super(processors, processors, 60, TimeUnit.SECONDS, linkedBlockingQueue);
+        logger.info("started StorjExecutorService with {} threads", processors);
+    }
 
 }
