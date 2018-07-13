@@ -32,6 +32,4 @@ public class StorjExecutorService extends ThreadPoolExecutor {
 		logger.info("started StorjExecutorService with {} threads", processors);
 	}
 
-
-
 }
