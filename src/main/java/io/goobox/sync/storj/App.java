@@ -181,16 +181,15 @@ public class App implements ShutdownListener {
         if (gooboxBucket == null) {
             System.exit(1);
         }
-        
+
         overlayHelper = new OverlayHelper(syncDir, new StorjOverlayIconProvider());
+        storjExecutorService = new StorjExecutorService(NUM_THREADS, new LinkedBlockingQueue<Runnable>());
 
         tasks = new TaskQueue();
         tasks.add(new CheckStateTask());
 
-        taskExecutor = new TaskExecutor(tasks);
+        taskExecutor = new TaskExecutor(tasks, storjExecutorService);
         fileWatcher = new FileWatcher();
-
-        storjExecutorService = new StorjExecutorService(NUM_THREADS, new LinkedBlockingQueue<Runnable>());
 
         fileWatcher.start();
         taskExecutor.start();
