@@ -30,8 +30,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-
 import io.goobox.sync.common.ShutdownListener;
 import io.goobox.sync.common.Utils;
 import io.goobox.sync.common.overlay.OverlayHelper;
@@ -50,7 +48,7 @@ public class App implements ShutdownListener {
 
     private static App instance;
 
-    private static int NUM_THREADS = Optional.of(Runtime.getRuntime().availableProcessors()).or(1);
+    private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     private Path syncDir;
 
@@ -151,10 +149,6 @@ public class App implements ShutdownListener {
 
     public OverlayHelper getOverlayHelper() {
         return overlayHelper;
-    }
-
-    public StorjExecutorService getStorjExecutorService() {
-        return storjExecutorService;
     }
 
     private void init(boolean resetAuthFile) {
