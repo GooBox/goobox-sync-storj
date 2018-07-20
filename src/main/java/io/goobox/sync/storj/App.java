@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -47,6 +48,8 @@ public class App implements ShutdownListener {
 
     private static App instance;
 
+    private static int NUM_THREADS = Runtime.getRuntime().availableProcessors();
+
     private Path syncDir;
 
     private Storj storj;
@@ -56,6 +59,8 @@ public class App implements ShutdownListener {
     private FileWatcher fileWatcher;
     private IpcExecutor ipcExecutor;
     private OverlayHelper overlayHelper;
+
+    private StorjExecutorService storjExecutorService;
 
     public App() {
         this.syncDir = Utils.getSyncDir();
@@ -170,13 +175,14 @@ public class App implements ShutdownListener {
         if (gooboxBucket == null) {
             System.exit(1);
         }
-        
+
         overlayHelper = new OverlayHelper(syncDir, new StorjOverlayIconProvider());
+        storjExecutorService = new StorjExecutorService(NUM_THREADS, new LinkedBlockingQueue<Runnable>());
 
         tasks = new TaskQueue();
         tasks.add(new CheckStateTask());
 
-        taskExecutor = new TaskExecutor(tasks);
+        taskExecutor = new TaskExecutor(tasks, storjExecutorService);
         fileWatcher = new FileWatcher();
 
         fileWatcher.start();
@@ -189,6 +195,11 @@ public class App implements ShutdownListener {
 
         if (overlayHelper != null) {
             overlayHelper.shutdown();
+        }
+
+        if (storjExecutorService != null) {
+            storjExecutorService.shutdownNow();
+            logger.info("Storj executor service shutdown");
         }
 
         System.exit(0);

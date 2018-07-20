@@ -20,9 +20,11 @@ public class TaskExecutor extends Thread {
 
     private TaskQueue tasks;
     private volatile Runnable currentTask;
+    private StorjExecutorService ses;
 
-    public TaskExecutor(TaskQueue tasks) {
+    public TaskExecutor(TaskQueue tasks, StorjExecutorService ses) {
         this.tasks = tasks;
+        this.ses = ses;
     }
 
     @Override
@@ -30,7 +32,17 @@ public class TaskExecutor extends Thread {
         while (true) {
             try {
                 currentTask = tasks.take();
-                currentTask.run();
+                if ( currentTask instanceof CheckStateTask || currentTask instanceof SleepTask) {
+
+                    while( ses.getActiveCount() > 0) {
+                        Thread.sleep(1000);
+                    }
+
+                    currentTask.run();
+                } else {
+                    ses.submit(currentTask);
+                }
+
                 currentTask = null;
             } catch (InterruptedException e) {
                 // nothing to do
